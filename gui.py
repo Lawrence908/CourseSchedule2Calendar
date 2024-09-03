@@ -36,10 +36,18 @@ class Application(tk.Tk):
             if not courses:
                 messagebox.showwarning("No Courses Found", "No course details were found in the PDF.")
                 return
-            service = authenticate_google_calendar()
-            for course in courses:
-                create_event(service, course)
-            messagebox.showinfo("Success", "All events have been created in your Google Calendar.")
+            
+            # Display course details for confirmation
+            course_details = "\n".join([f"{course['Course']} - {course['Days']} {course['Start']} - {course['End']}" for course in courses])
+            confirm = messagebox.askyesno("Confirm Events", f"Do you want to create the following events in Google Calendar?\n\n{course_details}")
+            
+            if confirm:
+                service = authenticate_google_calendar()
+                for course in courses:
+                    create_event(service, course)
+                messagebox.showinfo("Success", "All events have been created in your Google Calendar.")
+            else:
+                messagebox.showinfo("Cancelled", "Event creation has been cancelled.")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {e}")
 
