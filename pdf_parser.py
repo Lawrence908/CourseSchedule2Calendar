@@ -32,12 +32,10 @@ def parse_schedule(text):
         r"(?P<StartDate>\d{2}-[A-Z]{3})\s+"  # Start date
         r"(?P<EndDate>\d{2}-[A-Z]{3})\s+"  # End date
         r"(?P<Status>Enrolled)\s+"  # Status
-        r"(?P<DeliveryMode>Face-to-Face)"  # Delivery mode
     )
     
     courses = []
-    last_course = None
-    last_section = None
+    last_course_details = None
 
     # Debugging: Print the extracted text
     print("Extracted Text:\n", text)
@@ -51,15 +49,13 @@ def parse_schedule(text):
         
         if course_match:
             course = course_match.groupdict()
-            last_course = course['Course']
-            last_section = course['Section']
+            last_course_details = course
             courses.append(course)
             # Debugging: Print each matched course
             print("Matched Course:\n", course)
-        elif subsequent_match and last_course and last_section:
-            course = subsequent_match.groupdict()
-            course['Course'] = last_course
-            course['Section'] = last_section
+        elif subsequent_match and last_course_details:
+            course = last_course_details.copy()
+            course.update(subsequent_match.groupdict())
             courses.append(course)
             # Debugging: Print each matched subsequent entry
             print("Matched Subsequent Entry:\n", course)

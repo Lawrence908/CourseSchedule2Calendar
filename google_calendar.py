@@ -118,33 +118,14 @@ def authenticate_google_calendar():
     service = build('calendar', 'v3', credentials=creds)
     return service
 
-def show_schedule_gui(courses):
-    root = tk.Tk()
-    root.title("Course Schedule")
-
-    for course in courses:
-        course_info = f"{course['Course']} - {course['Days']} {course['Start']} - {course['End']}"
-        label = tk.Label(root, text=course_info)
-        label.pack()
-
-    def on_confirm():
-        if messagebox.askyesno("Confirm", "Do you want to create these events in Google Calendar?"):
-            root.destroy()
-            service = authenticate_google_calendar()
-            for course in courses:
-                create_event(service, course)
-            messagebox.showinfo("Success", "Events created successfully!")
-
-    confirm_button = tk.Button(root, text="Confirm", command=on_confirm)
-    confirm_button.pack()
-
-    root.mainloop()
-
+# Example usage
 if __name__ == "__main__":
-    # Example courses data
-    courses = [
-        {'Course': 'CSCI 360', 'Section': 'F24N02', 'Location': 'Nanaimo 200 106', 'Days': 'Mo We', 'Start': '13:00', 'End': '14:30', 'StartDate': '03-SEP', 'EndDate': '06-DEC', 'Status': 'Enrolled', 'Instructor': 'KABIR HUMAYUN', 'DeliveryMode': 'Face-to-Face'},
-        {'Course': 'CSCI 478', 'Section': 'F24N02', 'Location': 'Nanaimo 210 225', 'Days': 'Tu Th', 'Start': '10:00', 'End': '11:30', 'StartDate': '03-SEP', 'EndDate': '06-DEC', 'Status': 'Enrolled', 'Instructor': 'MENESES LUIS', 'DeliveryMode': 'Face-to-Face'}
-    ]
-
-    show_schedule_gui(courses)
+    service = authenticate_google_calendar()
+    pdf_path = "path_to_your_pdf.pdf"
+    text = extract_text_from_pdf(pdf_path)
+    courses = parse_schedule(text)
+    if not courses:
+        print("No course details were found in the PDF.")
+    else:
+        for course in courses:
+            create_event(service, course)
