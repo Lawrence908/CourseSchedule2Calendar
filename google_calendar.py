@@ -8,6 +8,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 import tkinter as tk
 from tkinter import messagebox
 
+from pdf_parser import extract_text_from_pdf, parse_schedule
+
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 def create_event(service, course):
