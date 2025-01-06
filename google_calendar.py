@@ -5,10 +5,11 @@ import pickle
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-import tkinter as tk
-from tkinter import messagebox
+from dotenv import load_dotenv
 
 from pdf_parser import extract_text_from_pdf, parse_schedule
+
+load_dotenv()
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
@@ -91,6 +92,7 @@ def authenticate_google_calendar():
             creds.refresh(Request())
         else:
             client_id = os.getenv('GOOGLE_CLIENT_ID')
+            project_id = os.getenv('GOOGLE_PROJECT_ID')
             client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
 
             if not client_id or not client_secret:
@@ -99,35 +101,20 @@ def authenticate_google_calendar():
             credentials = {
                 "installed": {
                     "client_id": client_id,
-                    "project_id": "courseschedule2calendar",
+                    "project_id": project_id,
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
                     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
                     "client_secret": client_secret,
-                    "redirect_uris": ["http://localhost"]
+                    "redirect_uris": ["http://localhost:5000/oauth2callback"]
                 }
             }
 
             flow = InstalledAppFlow.from_client_config(credentials, SCOPES)
-            auth_url, _ = flow.authorization_url(prompt='consent')
-            print(f'Please visit this URL to authorize this application: {auth_url}')
-            code = input('Enter the authorization code: ')
-            flow.fetch_token(code=code)
-            creds = flow.credentials
-        with open('token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
+            flow.redirect_uri = "http://localhost:5000/oauth2callback"
+            auth_url, state = flow.authorization_url(prompt='consent')
+
+            return auth_url, state
 
     service = build('calendar', 'v3', credentials=creds)
-    return service
-
-# Example usage
-if __name__ == "__main__":
-    service = authenticate_google_calendar()
-    pdf_path = "path_to_your_pdf.pdf"
-    text = extract_text_from_pdf(pdf_path)
-    courses = parse_schedule(text)
-    if not courses:
-        print("No course details were found in the PDF.")
-    else:
-        for course in courses:
-            create_event(service, course)
+    return service, None

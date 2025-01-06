@@ -1,5 +1,4 @@
 import pdfplumber
-import re
 
 def extract_text_from_pdf(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
@@ -9,71 +8,103 @@ def extract_text_from_pdf(pdf_path):
     return text
 
 def parse_schedule(text):
-    # Refined regex patterns to capture course details and subsequent lines without course and section
-    course_pattern = (
-        r"(?P<Course>[A-Z]{4} \d{3})\s+"  # Course code
-        r"(?P<Section>F24N\d{2})\s+"  # Section
-        r"(?P<Location>Nanaimo \d{3} \d{3})\s+"  # Location
-        r"(?P<Days>(?:Mo|Tu|We|Th|Fr|Sa|Su)+(?: (?:Mo|Tu|We|Th|Fr|Sa|Su))*)\s+"  # Days
-        r"(?P<Start>\d{2}:\d{2})\s+"  # Start time
-        r"(?P<End>\d{2}:\d{2})\s+"  # End time
-        r"(?P<StartDate>\d{2}-[A-Z]{3})\s+"  # Start date
-        r"(?P<EndDate>\d{2}-[A-Z]{3})\s+"  # End date
-        r"(?P<Status>Enrolled)\s+"  # Status
-        r"(?P<Instructor>[A-Z\s]+)\s+"  # Instructor
-        r"(?P<DeliveryMode>Face-to-Face)"  # Delivery mode
-    )
     
-    subsequent_pattern = (
-        r"(?P<Location>Nanaimo \d{3} \d{3})\s+"  # Location
-        r"(?P<Days>(?:Mo|Tu|We|Th|Fr|Sa|Su)+(?: (?:Mo|Tu|We|Th|Fr|Sa|Su))*)\s+"  # Days
-        r"(?P<Start>\d{2}:\d{2})\s+"  # Start time
-        r"(?P<End>\d{2}:\d{2})\s+"  # End time
-        r"(?P<StartDate>\d{2}-[A-Z]{3})\s+"  # Start date
-        r"(?P<EndDate>\d{2}-[A-Z]{3})\s+"  # End date
-        r"(?P<Status>Enrolled)\s+"  # Status
-    )
+    
+    
+    course_dict = {
+        "Course": [],
+        "Section": [],
+        "Location": [],
+        "Days": [],
+        "Start": [],
+        "End": [],
+        "StartDate": [],
+        "EndDate": [],
+        "Status": [],
+        "Instructor": [],
+        "DeliveryMode": []
+    }
     
     courses = []
-    last_course_details = None
 
     # Debugging: Print the extracted text
-    print("Extracted Text:\n", text)
+    # print("Extracted Text:\n", text)
 
-    for line in text.split('\n'):
-        # Debugging: Print each line being processed with exact characters
-        print(f"Processing line: {repr(line)}")
-        
-        course_match = re.match(course_pattern, line)
-        subsequent_match = re.match(subsequent_pattern, line)
-        
-        if course_match:
-            course = course_match.groupdict()
-            last_course_details = course
-            courses.append(course)
-            # Debugging: Print each matched course
-            print("Matched Course:\n", course)
-        elif subsequent_match and last_course_details:
-            course = last_course_details.copy()
-            course.update(subsequent_match.groupdict())
-            courses.append(course)
-            # Debugging: Print each matched subsequent entry
-            print("Matched Subsequent Entry:\n", course)
-        else:
-            # Debugging: Print if no match is found
-            print("No match found for line.")
+    # Define the locations to look for in the text
+    locations = ["Nanaimo", "Duncan"]
     
+    # Define the regex pattern for days of the week
+    days_pattern = r"(?P<Days>(?:Mo|Tu|We|Th|Fr|Sa|Su)+(?: (?:Mo|Tu|We|Th|Fr|Sa|Su))*)"
+
+    lines = text.split('\n')
+    
+    i = 0
+    while not lines[i].startswith("Course"):
+        i += 1
+    if lines[i].startswith("Course"):
+        i += 1
+    while i < len(lines):
+        # Initialize the current course dictionary
+        current_course = {key: "" for key in course_dict} # Initialize an empty course dictionary
+        
+        line = lines[i].strip()
+        print(f"Processing line: {repr(line)}")
+        columns = line.split()
+        
+        current_course["Course"] = columns[0] + " " + columns[1]
+        current_course["Section"] = columns[2]
+        current_course["Location"] = columns[3] + " " + columns[4] + " " + columns[5]
+        current_course["Days"] = ' '.join(columns[6:-8])
+        current_course["Start"] = columns[-8]
+        current_course["End"] = columns[-7]
+        current_course["StartDate"] = columns[-6]
+        current_course["EndDate"] = columns[-5]
+        current_course["Status"] = columns[-4]
+        current_course["Instructor"] = columns[-3] + " " + columns[-2]
+        current_course["DeliveryMode"] = columns[-1]
+        
+        # Append the current course to the list of courses
+        courses.append(current_course)
+        
+        # Look ahead to see if the next line is a location
+        j = i + 1
+        while j < len(lines) and (lines[j].startswith(locations[0]) or lines[j].startswith(locations[1])):
+            # Initialize a subsequent course dictionary
+            subsequent_course = {key: "" for key in course_dict}
+            
+            next_line = lines[j].strip()
+            print(f"Processing line: {repr(next_line)}")
+            columns = next_line.split()
+            
+            subsequent_course["Course"] = current_course["Course"]
+            subsequent_course["Section"] = current_course["Section"]
+            subsequent_course["Location"] = columns[0] + " " + columns[1] + " " + columns[2]
+            subsequent_course["Days"] = ' '.join(columns[3:-5])
+            subsequent_course["Start"] = columns[-5]
+            subsequent_course["End"] = columns[-4]
+            subsequent_course["StartDate"] = columns[-3]
+            subsequent_course["EndDate"] = columns[-2]
+            subsequent_course["Status"] = columns[-1]
+            subsequent_course["Instructor"] = current_course["Instructor"]
+            subsequent_course["DeliveryMode"] = current_course["DeliveryMode"]
+            
+            # Append the subsequent course to the list of courses
+            courses.append(subsequent_course)
+            
+            # Reset the subsequent course dictionary
+            subsequent_course = {key: "" for key in course_dict}
+            
+            j += 1
+            
+        # Reset the current course dictionary
+        current_course = {key: "" for key in course_dict}
+        
+        # Increment the index
+        i = j
+    
+    # Debugging: Print the number of courses with unique course codes in the ["Course"] key
+    print(f"Number of unique course codes: {len(set([course['Course'] for course in courses]))}")
     # Debugging: Print the number of matches found
-    print(f"Number of matches found: {len(courses)}")
+    print(f"Number of weekly calendar entries: {len(courses)}")
     
     return courses
-
-# Example usage
-if __name__ == "__main__":
-    pdf_path = "path_to_your_pdf.pdf"
-    text = extract_text_from_pdf(pdf_path)
-    courses = parse_schedule(text)
-    if not courses:
-        print("No course details were found in the PDF.")
-    else:
-        print("Courses found:\n", courses)
