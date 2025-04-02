@@ -14,53 +14,34 @@ load_dotenv()
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 def create_event(service, course):
-    # Create recurrence rule based on days and end date
     days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
-    days = ','.join([days_mapping[day] for day in course['Days'].split()])
-    
+    days = ','.join([days_mapping.get(day, '') for day in course['Days'].split() if day in days_mapping])
+    if not days:
+        raise ValueError(f"No valid days found for course: {course['Course']} with Days: {course['Days']}")
     recurrence_rule = [
         f"RRULE:FREQ=WEEKLY;BYDAY={days};UNTIL={convert_to_google_date(course['EndDate'], course['Section'][:3])}"
     ]
-
-    # Update summary
     building_room = course['Location'].split()[-2:]
     building = building_room[0]
     room = building_room[1]
     semester = course['Section'][:3]
-    section = course['Section'][3:]
-
-    # Convert date and time to datetime objects
     start_datetime = convert_to_datetime(course['StartDate'], course['Start'], semester, course['Days'])
     end_datetime = convert_to_datetime(course['StartDate'], course['End'], semester, course['Days'])
-    recurrence_until = convert_to_google_date(course['EndDate'], semester)
-
-    # Update summary
-    summary = f"{course['Course']} - B{building} R{room} - {section}"
-
-    # Update location
-    if course['Location'].startswith("Nanaimo"):
-        location = "Vancouver Island University, 900 Fifth St, Nanaimo, BC V9R 5S5, Canada"
-    elif course['Location'].startswith("Duncan"):
-        location = "Vancouver Island University, Cowichan Campus, 2011 University Way, North Cowichan, BC V9L 0C7, Canada"
-    else:
-        location = course['Location']  # Fallback to the original location if not Nanaimo or Duncan
-
+    summary = f"{course['Course']} - B{building} R{room}"
+    location = "Vancouver Island University, 900 Fifth St, Nanaimo, BC V9R 5S5, Canada"
     event = {
         'summary': summary,
         'location': location,
         'description': f"Instructor: {course['Instructor']}, Status: {course['Status']}, DeliveryMode: {course['DeliveryMode']}",
-        'start': {
-            'dateTime': start_datetime.isoformat(),
-            'timeZone': 'America/Vancouver',
-        },
-        'end': {
-            'dateTime': end_datetime.isoformat(),
-            'timeZone': 'America/Vancouver',
-        },
+        'start': {'dateTime': start_datetime.isoformat(), 'timeZone': 'America/Vancouver'},
+        'end': {'dateTime': end_datetime.isoformat(), 'timeZone': 'America/Vancouver'},
         'recurrence': recurrence_rule,
     }
-    event = service.events().insert(calendarId='primary', body=event).execute()
-    print(f'Event created: {event.get("htmlLink")}')
+    created_event = service.events().insert(calendarId='primary', body=event).execute()
+    print(f'Event created: {created_event.get("htmlLink")}')
+    return created_event
+
+
 
 def convert_to_datetime(date_str, time_str, semester, days):
     # Extract year from semester (e.g., F24 -> 2024)
