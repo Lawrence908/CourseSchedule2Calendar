@@ -4,7 +4,7 @@ import os
 import pickle
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from dotenv import load_dotenv
 
 from pdf_parser import extract_text_from_pdf, parse_schedule
@@ -63,39 +63,52 @@ def convert_to_google_date(date_str, semester):
     dt = datetime.datetime.strptime(date_str, '%d-%b').replace(year=year)
     return dt.strftime('%Y%m%dT000000Z')
 
-def authenticate_google_calendar():
+def authenticate_google_calendar_cli():
+    """Authenticate and return the Google Calendar service for CLI usage."""
     creds = None
     if os.path.exists('token.pickle'):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
+    
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            client_id = os.getenv('GOOGLE_CLIENT_ID')
-            project_id = os.getenv('GOOGLE_PROJECT_ID')
-            client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+            try:
+                creds.refresh(Request())
+            except Exception:
+                creds = None
+        
+        if not creds:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json',
+                SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+            
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(creds, token)
+    
+    return build('calendar', 'v3', credentials=creds)
 
-            if not client_id or not client_secret:
-                raise ValueError("Environment variables GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set.")
+def get_google_auth_url():
+    """Get the Google OAuth URL for web authentication."""
+    flow = Flow.from_client_secrets_file(
+        'credentials.json',
+        scopes=SCOPES,
+        redirect_uri='http://localhost:5000/oauth2callback'
+    )
+    auth_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    return auth_url, state, flow
 
-            credentials = {
-                "installed": {
-                    "client_id": client_id,
-                    "project_id": project_id,
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                    "client_secret": client_secret,
-                    "redirect_uris": ["http://localhost:5000/oauth2callback"]
-                }
-            }
-
-            flow = InstalledAppFlow.from_client_config(credentials, SCOPES)
-            flow.redirect_uri = "http://localhost:5000/oauth2callback"
-            auth_url, state = flow.authorization_url(prompt='consent')
-
-            return auth_url, state
-
-    service = build('calendar', 'v3', credentials=creds)
-    return service, None
+def handle_google_callback(auth_response, flow):
+    """Handle the OAuth callback and return the service."""
+    flow.fetch_token(authorization_response=auth_response)
+    creds = flow.credentials
+    
+    # Save credentials for future use
+    with open('token.pickle', 'wb') as token:
+        pickle.dump(creds, token)
+    
+    return build('calendar', 'v3', credentials=creds)
