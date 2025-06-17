@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Select Calendar Provider - Schedule2Calendar{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Select Your Calendar Provider</h2>
+        <div class="mt-2 max-w-xl text-sm text-gray-500">
+            <p>Choose your calendar provider to create events:</p>
+        </div>
+        
+        <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {% for provider in providers %}
+            <a href="{{ url_for('authorize', provider=provider.get_provider_key()) }}" 
+               class="relative block w-full rounded-lg border border-gray-300 p-4 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <img class="h-12 w-12" src="{{ provider.get_provider_icon() }}" alt="{{ provider.get_provider_name() }} logo">
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-lg font-medium text-gray-900">{{ provider.get_provider_name() }}</h3>
+                        <p class="text-sm text-gray-500">Connect with your {{ provider.get_provider_name() }} account</p>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
