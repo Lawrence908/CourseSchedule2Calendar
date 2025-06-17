@@ -163,4 +163,5 @@ cython_debug/
 
 
 credentials.json
+token.pickle
 *googleusercontent.com.json
