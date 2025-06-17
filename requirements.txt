@@ -7,3 +7,7 @@ google-auth-httplib2
 google-auth-oauthlib
 python-dotenv
 pyinstaller
+redis
+Flask-Session
+Flask-Mail
+ics
