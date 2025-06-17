@@ -1,4 +1,6 @@
 # filepath: /home/chris/github/CourseSchedule2Calendar/app.py
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 from flask import Flask, request, redirect, url_for, render_template, flash, session, Response
 from werkzeug.utils import secure_filename
 import os, secrets
@@ -241,7 +243,18 @@ def oauth2callback():
             auth_response = request.url
         
         # Build provider service but do NOT create events yet. Store service for later use.
-        service = provider_instance.handle_callback(auth_response, None)
+        if provider == 'google':
+            from google_auth_oauthlib.flow import Flow
+            flow = Flow.from_client_secrets_file(
+                'credentials.json',
+                scopes=GoogleCalendarProvider.SCOPES,
+                redirect_uri='http://localhost:5000/oauth2callback'
+            )
+            if code_verifier:
+                flow.code_verifier = code_verifier
+            service = provider_instance.handle_callback(auth_response, flow)
+        else:
+            service = provider_instance.handle_callback(auth_response, None)
         
         upload_id = session.get('upload_id')
         if upload_id:
@@ -303,6 +316,14 @@ def create_selected_events():
         provider_key = service_entry['provider']
         provider_instance = CALENDAR_PROVIDERS[provider_key]
         
+        # Rebuild the service object for Google
+        if provider_key == 'google':
+
+            creds = Credentials.from_authorized_user_info(service_entry['credentials'])
+            service = build('calendar', 'v3', credentials=creds)
+        else:
+            service = service_entry  # For Apple, keep as is
+        
         created_events = []
         for idx_str in selected_indices:
             try:
@@ -313,7 +334,7 @@ def create_selected_events():
                 course = courses[idx]
                 try:
                     logger.info('Creating event (user-selected) with data: %r', course)
-                    event = provider_instance.create_event(service_entry, course)
+                    event = provider_instance.create_event(service, course)
                     
                     if provider_key == 'apple':
                         # For Apple, return the ICS file for download
