@@ -1,6 +1,6 @@
 import os
 from pdf_parser import extract_text_from_pdf, parse_schedule
-from google_calendar import authenticate_google_calendar, create_event
+from google_calendar import authenticate_google_calendar_cli, create_event
 
 def main(pdf_path):
     if not os.path.exists(pdf_path):
@@ -14,7 +14,7 @@ def main(pdf_path):
         print("No courses found in the PDF.")
         return
 
-    service = authenticate_google_calendar()
+    service = authenticate_google_calendar_cli()
 
     for course in courses:
         create_event(service, course)
