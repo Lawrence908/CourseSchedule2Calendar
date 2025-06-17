@@ -20,7 +20,7 @@ def authenticate_google_calendar():
             creds.refresh(Request())
         else:
             # Use InstalledAppFlow to handle desktop authentication
-            flow = InstalledAppFlow.from_client_secrets_file('client_secret_165503894384-m368d8ts9aod6kpgrps2l4j2klk1veie.apps.googleusercontent.com.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('client_secret_165503894384-gld5bqlm1br566ahd9b2kda5m7bm8oij.apps.googleusercontent.com.json', SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
