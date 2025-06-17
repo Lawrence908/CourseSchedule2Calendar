@@ -26,6 +26,11 @@
             </a>
             {% endfor %}
         </div>
+        <div class="mt-8 text-center">
+            <form action="{{ url_for('ics_direct') }}" method="POST">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg text-lg shadow">Download ICS for Apple/Outlook (No Login Required)</button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %} 

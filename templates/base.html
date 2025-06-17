@@ -51,5 +51,16 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    {% block footer %}
+    <footer class="mt-12 py-6 bg-gray-100 text-center text-xs text-gray-500">
+        <div>
+            &copy; {{ year or 2024 }} Schedule2Calendar &middot;
+            <a href="mailto:prometheanforgeltd@gmail.com" class="underline">Contact</a> &middot;
+            <a href="https://github.com/lawrence908/CourseSchedule2Calendar" target="_blank" class="underline">GitHub</a> &middot;
+            <a href="/privacy" class="underline">Privacy</a>
+        </div>
+    </footer>
+    {% endblock %}
 </body>
 </html> 

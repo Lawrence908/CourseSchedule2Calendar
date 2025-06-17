@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Your Events - Schedule2Calendar{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow sm:rounded-lg">
+    <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-medium text-gray-900">Identified Events</h2>
+            <button id="toggleEvents" class="focus:outline-none">
+                <svg id="arrowIcon" class="h-6 w-6 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+        </div>
+        <div id="eventsSection">
+        {% if filename %}
+        <div class="flex items-center mb-4">
+            <img src="/static/pdf-icon.png" alt="PDF" class="h-6 w-6 mr-2">
+            <span class="text-sm text-gray-700">{{ filename }}</span>
+        </div>
+        {% endif %}
+        <form id="eventForm" action="{{ url_for('create_selected_events') }}" method="POST">
+            <input type="hidden" name="selected" id="selectedInput" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {% for course in courses %}
+                <div data-index="{{ loop.index0 }}" class="course-card relative bg-gray-50 rounded-lg shadow p-4 flex flex-col justify-between cursor-pointer transition duration-150 ease-in-out">
+                    <!-- Checkmark overlay -->
+                    <svg class="checkmark absolute top-2 right-2 h-6 w-6 text-green-500 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8.414 8.414a1 1 0 01-1.414 0L3.293 11.414a1 1 0 011.414-1.414L8 13.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                        <h3 class="text-md font-semibold text-blue-700 mb-1">{{ course['Course'] }}</h3>
+                        <p class="text-sm text-gray-600 mb-1">Section: {{ course['Section'] }}</p>
+                        <p class="text-sm text-gray-600 mb-1">Instructor: {{ course['Instructor'] }}</p>
+                        <p class="text-sm text-gray-600 mb-1">Location: {{ course['Location'] }}</p>
+                        <p class="text-sm text-gray-600 mb-1">Days: {{ course['Days'] }}</p>
+                        <p class="text-sm text-gray-600 mb-1">Time: {{ course['Start'] }} - {{ course['End'] }}</p>
+                        <p class="text-sm text-gray-600 mb-1">Start: {{ course['StartDate'] }} | End: {{ course['EndDate'] }}</p>
+                        <p class="text-xs text-gray-500">Status: {{ course['Status'] }} | Mode: {{ course['DeliveryMode'] }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-6 text-right">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded disabled:opacity-50" id="createBtn" disabled>Create Selected Events</button>
+            </div>
+        </form>
+        </div>
+        {% if created_events %}
+        <div class="mt-6">
+            <h3 class="text-md font-semibold text-green-700 mb-2">Created Events</h3>
+            <ul class="list-disc ml-6">
+                {% for event in created_events %}
+                <li>
+                    <a href="{{ event.htmlLink }}" class="text-blue-600 underline" target="_blank">{{ event.summary }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <!-- Email and ICS download section -->
+        <div class="mt-8 max-w-lg mx-auto">
+            <form action="{{ url_for('send_email_summary') }}" method="POST" class="flex flex-col gap-2 items-center">
+                <label for="email" class="block text-sm font-medium text-gray-700">Send a summary to your email:</label>
+                <input type="email" name="email" id="email" required class="border rounded px-3 py-2 w-full max-w-xs" placeholder="you@email.com" />
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded">Send Email</button>
+                <span class="text-xs text-gray-500 mt-1">We only use your email to send this summary. <a href="/privacy" class="underline">Privacy Policy</a></span>
+            </form>
+            <form action="{{ url_for('download_ics') }}" method="POST" class="mt-4 text-center">
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">Download ICS for Apple/Outlook</button>
+            </form>
+            {% if email_sent %}
+            <div class="mt-2 text-green-700 text-sm">Email sent successfully!</div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Selection logic & collapse script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const cards = document.querySelectorAll('.course-card');
+        const selectedInput = document.getElementById('selectedInput');
+        const createBtn = document.getElementById('createBtn');
+        const selectedSet = new Set();
+        const toggleBtn = document.getElementById('toggleEvents');
+        const eventsSection = document.getElementById('eventsSection');
+        const arrowIcon = document.getElementById('arrowIcon');
+
+        function updateForm() {
+            selectedInput.value = Array.from(selectedSet).join(',');
+            createBtn.disabled = selectedSet.size === 0;
+        }
+
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                const idx = card.dataset.index;
+                const check = card.querySelector('.checkmark');
+                if (selectedSet.has(idx)) {
+                    selectedSet.delete(idx);
+                    card.classList.remove('ring-4', 'ring-green-400');
+                    check.classList.add('hidden');
+                } else {
+                    selectedSet.add(idx);
+                    card.classList.add('ring-4', 'ring-green-400');
+                    check.classList.remove('hidden');
+                }
+                updateForm();
+            });
+        });
+
+        if (toggleBtn && eventsSection && arrowIcon) {
+            toggleBtn.addEventListener('click', () => {
+                eventsSection.classList.toggle('hidden');
+                arrowIcon.classList.toggle('rotate-180');
+            });
+        }
+    });
+</script>
+{% endblock %} 

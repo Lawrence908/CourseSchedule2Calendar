@@ -3,35 +3,118 @@
 {% block title %}Upload Schedule - Schedule2Calendar{% endblock %}
 
 {% block content %}
-<div class="bg-white shadow sm:rounded-lg">
-    <div class="px-4 py-5 sm:p-6">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Upload Your Course Schedule</h2>
-        <div class="mt-2 max-w-xl text-sm text-gray-500">
-            <p>Upload your course schedule PDF to create calendar events.</p>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div id="flash-message" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50">
+      {{ messages[0] }}
+    </div>
+    <script>
+      // Show the flash message as a popup
+      const flashMsg = document.getElementById('flash-message');
+      if (flashMsg) {
+        flashMsg.classList.remove('hidden');
+        setTimeout(() => {
+          flashMsg.classList.add('hidden');
+        }, 3500); // Hide after 3.5 seconds
+      }
+    </script>
+  {% endif %}
+{% endwith %}
+
+<!-- Hero Section -->
+<div class="bg-white shadow sm:rounded-lg mb-8">
+    <div class="px-4 py-10 sm:p-12 text-center">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-700 mb-2">Schedule2Calendar</h1>
+        <p class="text-lg text-gray-700 mb-6">Turn your course schedule PDF into calendar events in seconds!</p>
+        <button id="getStartedBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg text-lg shadow transition">Get Started</button>
+    </div>
+</div>
+
+<!-- How it Works -->
+<div class="max-w-4xl mx-auto mb-10">
+    <h2 class="text-xl font-semibold text-center mb-6">How it Works</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        <div class="flex flex-col items-center">
+            <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mb-2"><span class="text-2xl">1</span></div>
+            <p class="font-medium">Upload PDF</p>
+            <p class="text-xs text-gray-500">Drag and drop or select your course schedule PDF.</p>
         </div>
-        <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="mt-5">
-            <div class="flex items-center justify-center w-full">
-                <label id="drop-area" for="file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <div id="upload-content" class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                        </svg>
-                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p class="text-xs text-gray-500">PDF files only</p>
-                    </div>
-                    <input id="file" name="file" type="file" class="hidden" accept=".pdf" />
-                    <div id="file-info" class="hidden flex flex-col items-center justify-center pt-5 pb-6">
-                        <img src="/static/pdf-icon.png" alt="PDF" class="h-8 w-8 mb-2">
-                        <span id="filename" class="text-sm text-gray-700"></span>
-                    </div>
-                </label>
+        <div class="flex flex-col items-center">
+            <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mb-2"><span class="text-2xl">2</span></div>
+            <p class="font-medium">Select Events</p>
+            <p class="text-xs text-gray-500">Choose which courses to add to your calendar.</p>
+        </div>
+        <div class="flex flex-col items-center">
+            <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mb-2"><span class="text-2xl">3</span></div>
+            <p class="font-medium">Add to Calendar</p>
+            <p class="text-xs text-gray-500">Sync with Google, Apple, or download ICS.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Supported Providers -->
+<div class="max-w-2xl mx-auto mb-10 text-center">
+    <h3 class="text-lg font-semibold mb-2">Supported Providers</h3>
+    <div class="flex justify-center gap-8 items-center">
+        <img src="/static/google-calendar.png" alt="Google Calendar" class="h-10 w-10" />
+        <img src="/static/apple-calendar.png" alt="Apple Calendar" class="h-10 w-10" />
+    </div>
+</div>
+
+<!-- Testimonials / Why Use This? -->
+<div class="max-w-3xl mx-auto mb-12">
+    <h3 class="text-lg font-semibold text-center mb-2">Why Use Schedule2Calendar?</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        <div class="bg-gray-50 rounded-lg p-4 shadow">
+            <p class="text-sm">“Saved me hours of manual entry. My whole semester is in my phone!”</p>
+            <span class="block mt-2 text-xs text-gray-400">— Student</span>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4 shadow">
+            <p class="text-sm">“Super easy to use, and I love the Google Calendar integration.”</p>
+            <span class="block mt-2 text-xs text-gray-400">— Grad Student</span>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4 shadow">
+            <p class="text-sm">“No more missed classes. I wish I had this in first year!”</p>
+            <span class="block mt-2 text-xs text-gray-400">— Undergrad</span>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Form (hidden until Get Started) -->
+<div id="uploadSection" class="hidden">
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="mb-4 text-right">
+                <a href="{{ url_for('clear_session') }}" class="inline-block px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs font-semibold">Clear Session</a>
             </div>
-            <div class="mt-4">
-                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    Upload and Process
-                </button>
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Upload Your Course Schedule</h2>
+            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                <p>Upload your course schedule PDF to create calendar events.</p>
             </div>
-        </form>
+            <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" class="mt-5">
+                <div class="flex items-center justify-center w-full">
+                    <label id="drop-area" for="file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div id="upload-content" class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-gray-500">PDF files only</p>
+                        </div>
+                        <input id="file" name="file" type="file" class="hidden" accept=".pdf" />
+                        <div id="file-info" class="hidden flex flex-col items-center justify-center pt-5 pb-6">
+                            <img src="/static/pdf-icon.png" alt="PDF" class="h-8 w-8 mb-2">
+                            <span id="filename" class="text-sm text-gray-700"></span>
+                        </div>
+                    </label>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Upload and Process
+                    </button>
+                </div>
+    </form>
+        </div>
     </div>
 </div>
 <script>
@@ -40,16 +123,26 @@ const fileInput = document.getElementById('file');
 const fileInfo = document.getElementById('file-info');
 const filenameSpan = document.getElementById('filename');
 const uploadContent = document.getElementById('upload-content');
+const getStartedBtn = document.getElementById('getStartedBtn');
+const uploadSection = document.getElementById('uploadSection');
 
-dropArea.addEventListener('dragover', (e) => {
+if (getStartedBtn) {
+    getStartedBtn.addEventListener('click', () => {
+        uploadSection.classList.remove('hidden');
+        getStartedBtn.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        setTimeout(() => uploadSection.scrollIntoView({ behavior: 'smooth' }), 200);
+    });
+}
+
+dropArea && dropArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropArea.classList.add('bg-blue-50', 'border-blue-400');
 });
-dropArea.addEventListener('dragleave', (e) => {
+dropArea && dropArea.addEventListener('dragleave', (e) => {
     e.preventDefault();
     dropArea.classList.remove('bg-blue-50', 'border-blue-400');
 });
-dropArea.addEventListener('drop', (e) => {
+dropArea && dropArea.addEventListener('drop', (e) => {
     e.preventDefault();
     dropArea.classList.remove('bg-blue-50', 'border-blue-400');
     if (e.dataTransfer.files.length) {
@@ -57,7 +150,7 @@ dropArea.addEventListener('drop', (e) => {
         showFileInfo();
     }
 });
-fileInput.addEventListener('change', showFileInfo);
+fileInput && fileInput.addEventListener('change', showFileInfo);
 function showFileInfo() {
     if (fileInput.files.length) {
         filenameSpan.textContent = fileInput.files[0].name;
