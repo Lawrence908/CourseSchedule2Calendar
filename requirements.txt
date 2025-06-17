@@ -10,4 +10,5 @@ pyinstaller
 redis
 Flask-Session
 Flask-Mail
+PyJWT
 ics
