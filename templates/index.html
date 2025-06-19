@@ -100,13 +100,31 @@
                 <a href="{{ url_for('clear_session') }}" class="btn btn-sm btn-secondary">Clear Session</a>
             </div>
             <h2 class="h5 fw-medium text-light mb-3">Upload Your Course Schedule</h2>
-            <div class="mb-3 text-muted small">
-                <p>Upload your course schedule PDF to create calendar events.</p>
+            <div class="mb-4 text-muted">
+                <p>To get your course schedule:</p>
+                <ol class="ms-4">
+                    <li>Go to <a href="https://students.viu.ca/SRS/mystudentrecord.htm#coursehistory" target="_blank" rel="noopener" class="text-primary">My Student Record</a></li>
+                    <li>Navigate to Academics → Course Enrollment History</li>
+                    <li>Select "Course Schedule" for your desired semester</li>
+                    <li>Save or download the PDF</li>
+                </ol>
             </div>
             <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="file" class="form-label">Select PDF file</label>
-                    <input id="file" name="file" type="file" class="form-control" accept=".pdf" required />
+                <div class="upload-area mb-4">
+                    <div id="drop-zone" class="border border-2 border-dashed rounded-3 p-4 text-center position-relative">
+                        <input id="file" name="file" type="file" class="position-absolute w-100 h-100 opacity-0" style="top: 0; left: 0; cursor: pointer;" accept=".pdf" required />
+                        <div class="py-4">
+                            <img src="/static/pdf-icon.png" alt="PDF icon" style="height: 48px; width: 48px;" class="mb-3">
+                            <div id="upload-text">
+                                <p class="mb-2">Drag and drop your course schedule PDF here</p>
+                                <p class="text-muted small mb-0">or click to browse files</p>
+                            </div>
+                            <div id="file-info" class="d-none">
+                                <p class="mb-2 text-primary">Selected file:</p>
+                                <p id="file-name" class="mb-0"></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Upload and Process</button>
             </form>
@@ -116,11 +134,61 @@
 <script>
 const getStartedBtn = document.getElementById('getStartedBtn');
 const uploadSection = document.getElementById('uploadSection');
+const fileInput = document.getElementById('file');
+const dropZone = document.getElementById('drop-zone');
+
 if (getStartedBtn) {
     getStartedBtn.addEventListener('click', () => {
         uploadSection.classList.remove('d-none');
         uploadSection.scrollIntoView({ behavior: 'smooth' });
     });
 }
+
+// Handle drag and drop
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary');
+    if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        updateFileName(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+        updateFileName(e.target.files[0]);
+    }
+});
+
+function updateFileName(file) {
+    const uploadText = document.getElementById('upload-text');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    
+    uploadText.classList.add('d-none');
+    fileInfo.classList.remove('d-none');
+    fileName.textContent = file.name;
+}
+
+fileInput.addEventListener('click', (e) => {
+    // Reset the display if no file is selected
+    if (!fileInput.files.length) {
+        const uploadText = document.getElementById('upload-text');
+        const fileInfo = document.getElementById('file-info');
+        
+        uploadText.classList.remove('d-none');
+        fileInfo.classList.add('d-none');
+    }
+});
 </script>
 {% endblock %}
