@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 {% block title %}Privacy Policy - Schedule2Calendar{% endblock %}
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white shadow sm:rounded-lg p-8 mt-8">
-    <h1 class="text-2xl font-bold mb-4">Privacy Policy</h1>
-    <p class="mb-4">We value your privacy. Here's how we handle your data:</p>
-    <ul class="list-disc ml-6 mb-4 text-gray-700">
-        <li>Your uploaded PDFs and parsed course data are <b>never stored</b> on our servers after processing. They are used only to generate your calendar events and are deleted immediately after your session ends.</li>
-        <li>If you choose to enter your email, it is used <b>only</b> to send you a summary of your calendar events. We may store your email address to notify you of important updates, but we will never share or sell your email.</li>
-        <li>We do not use your data for advertising or analytics.</li>
-        <li>You can contact us at <a href="mailto:prometheanforgeltd@gmail.com" class="underline">prometheanforgeltd@gmail.com</a> for any privacy concerns.</li>
-    </ul>
-    <p class="text-xs text-gray-500">This policy may be updated from time to time. Last updated: 2024-06-16.</p>
+<div class="container mt-5">
+    <div class="card shadow mx-auto" style="max-width: 40rem;">
+        <div class="card-body p-5">
+            <h1 class="h3 fw-bold mb-4 text-light">Privacy Policy</h1>
+            <p class="mb-4 text-light">We value your privacy. Here's how we handle your data:</p>
+            <ul class="list-group list-group-flush mb-4">
+                <li class="list-group-item bg-dark text-light border-0">Your uploaded PDFs and parsed course data are <b>never stored</b> on our servers after processing. They are used only to generate your calendar events and are deleted immediately after your session ends.</li>
+                <li class="list-group-item bg-dark text-light border-0">If you choose to enter your email, it is used <b>only</b> to send you a summary of your calendar events. We may store your email address to notify you of important updates, but we will never share or sell your email.</li>
+                <li class="list-group-item bg-dark text-light border-0">We do not use your data for advertising or analytics.</li>
+                <li class="list-group-item bg-dark text-light border-0">You can contact us at <a href="mailto:prometheanforgeltd@gmail.com" class="text-primary text-decoration-underline">prometheanforgeltd@gmail.com</a> for any privacy concerns.</li>
+            </ul>
+            <p class="text-muted small">This policy may be updated from time to time. Last updated: 2024-06-16.</p>
+        </div>
+    </div>
 </div>
 {% endblock %} 

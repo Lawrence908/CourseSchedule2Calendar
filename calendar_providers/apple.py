@@ -6,6 +6,8 @@ from .base import CalendarProvider
 import logging
 import os
 from datetime import datetime, timedelta
+from ics import Calendar, Event, Organizer, Geo
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -24,95 +26,16 @@ class AppleCalendarProvider(CalendarProvider):
         if not all([self.client_id, self.team_id, self.key_id, self.private_key_path]):
             logger.warning("Missing required Apple OAuth configuration")
     
-    def _generate_client_secret(self) -> str:
-        """Generate a JWT client secret for Apple OAuth."""
-        try:
-            with open(self.private_key_path, 'r') as key_file:
-                private_key = key_file.read()
-            
-            # JWT header
-            headers = {
-                'kid': self.key_id,
-                'alg': 'ES256'
-            }
-            
-            # JWT payload
-            payload = {
-                'iss': self.team_id,
-                'iat': int(time.time()),
-                'exp': int(time.time()) + 15777000,  # 6 months
-                'aud': 'https://appleid.apple.com',
-                'sub': self.client_id
-            }
-            
-            # Sign the JWT
-            client_secret = jwt.encode(
-                payload,
-                private_key,
-                algorithm='ES256',
-                headers=headers
-            )
-            
-            return client_secret
-        except Exception as e:
-            logger.error(f"Error generating Apple client secret: {str(e)}")
-            raise
-    
     def get_auth_url(self) -> Tuple[str, str, Any]:
         """Get the Apple OAuth URL."""
-        try:
-            # Generate state for CSRF protection
-            state = os.urandom(16).hex()
-            
-            # Construct authorization URL
-            auth_url = (
-                'https://appleid.apple.com/auth/authorize'
-                f'?client_id={self.client_id}'
-                f'&redirect_uri={self.redirect_uri}'
-                '&response_type=code'
-                f'&scope={" ".join(self.SCOPES)}'
-                '&response_mode=form_post'
-                f'&state={state}'
-            )
-            
-            # Store state in Redis (handled by app.py)
-            return auth_url, state, None
-        except Exception as e:
-            logger.error(f"Error generating Apple auth URL: {str(e)}")
-            raise
+        # Since we're not using Apple OAuth anymore, we'll just return a dummy URL
+        # that will redirect to the event selection page
+        return "http://localhost:5000/events", "dummy_state", None
     
     def handle_callback(self, auth_response: str, flow: Any) -> Any:
         """Handle the OAuth callback and return the service."""
-        try:
-            # Extract code from form data
-            code = auth_response.split('code=')[1].split('&')[0]
-            
-            # Generate client secret
-            client_secret = self._generate_client_secret()
-            
-            # Exchange code for tokens
-            token_url = 'https://appleid.apple.com/auth/token'
-            token_data = {
-                'client_id': self.client_id,
-                'client_secret': client_secret,
-                'code': code,
-                'grant_type': 'authorization_code',
-                'redirect_uri': self.redirect_uri
-            }
-            
-            response = requests.post(token_url, data=token_data)
-            response.raise_for_status()
-            tokens = response.json()
-            
-            # Store tokens in Redis (handled by app.py)
-            return {
-                'access_token': tokens.get('access_token'),
-                'refresh_token': tokens.get('refresh_token'),
-                'id_token': tokens.get('id_token')
-            }
-        except Exception as e:
-            logger.error(f"Error handling Apple callback: {str(e)}")
-            raise
+        # Since we're not using Apple OAuth anymore, we'll just return None
+        return None
     
     def create_event(self, service: Any, event_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create an event in Apple Calendar."""
@@ -124,28 +47,73 @@ class AppleCalendarProvider(CalendarProvider):
             cal = Calendar()
             event = Event()
             
+            # Extract building and room information
+            building_room = event_data['Location'].split()[-2:]
+            building = building_room[0]
+            room = building_room[1]
+            
             # Set event details
             event.name = f"{event_data['Course']} - {event_data['Section']}"
             event.begin = self._convert_to_datetime(event_data['StartDate'], event_data['Start'], event_data['Section'][:3])
             event.end = self._convert_to_datetime(event_data['StartDate'], event_data['End'], event_data['Section'][:3])
-            event.location = event_data['Location']
-            event.description = (
+            
+            # Set location with full address
+            location = "Vancouver Island University, 900 Fifth St, Nanaimo, BC V9R 5S5, Canada"
+            event.location = f"{location} - Building {building}, Room {room}"
+            
+            # Add detailed description
+            description = (
+                f"Course: {event_data['Course']}\n"
+                f"Section: {event_data['Section']}\n"
                 f"Instructor: {event_data['Instructor']}\n"
                 f"Status: {event_data['Status']}\n"
-                f"Delivery Mode: {event_data['DeliveryMode']}"
+                f"Delivery Mode: {event_data['DeliveryMode']}\n"
+                f"Building: {building}\n"
+                f"Room: {room}\n"
+                f"Days: {event_data['Days']}\n"
+                f"Time: {event_data['Start']} - {event_data['End']}"
             )
+            event.description = description
             
             # Add recurrence rule
             days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
             days = ','.join([days_mapping.get(day, '') for day in event_data['Days'].split() if day in days_mapping])
             until_date = self._convert_to_google_date(event_data['EndDate'], event_data['Section'][:3])
-            event.rrule = f"FREQ=WEEKLY;BYDAY={days};UNTIL={until_date}"
+            rrule_str = f"FREQ=WEEKLY;BYDAY={days};UNTIL={until_date}"
+            event.extra.append(('RRULE', rrule_str))
+            
+            # Add organizer (university)
+            event.organizer = Organizer(
+                common_name="Vancouver Island University",
+                email="info@viu.ca"
+            )
+            
+            # Add URL to VIU website
+            event.url = "https://www.viu.ca"
+            
+            # Add categories/tags
+            event.categories = ["Education", "Course"]
+            
+            # Add status
+            event.status = "CONFIRMED"
+            
+            # Add classification (public)
+            event.classification = "PUBLIC"
+            
+            # Add priority
+            event.priority = 5  # Normal priority
+            
+            # Add sequence number (for updates)
+            event.sequence = 0
+            
+            # Add transparency (opaque - blocks time)
+            event.transparent = False
             
             cal.events.add(event)
             
             # Return the ICS data
             return {
-                'ics_data': str(cal),
+                'ics_data': cal.serialize(),
                 'filename': f"{event_data['Course']}_{event_data['Section']}.ics"
             }
         except Exception as e:
@@ -169,6 +137,6 @@ class AppleCalendarProvider(CalendarProvider):
     
     def get_provider_icon(self) -> str:
         return "/static/apple-calendar.png"
-    
+
     def get_provider_key(self) -> str:
         return "apple" 

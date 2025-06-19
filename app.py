@@ -16,6 +16,10 @@ import redis
 import json
 from flask_mail import Mail, Message
 from ics import Calendar, Event
+from datetime import datetime, timezone
+from icalendar import Calendar as ICalendar
+from icalendar import Event as ICalendarEvent
+from datetime import datetime
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -108,6 +112,10 @@ APPLE_REDIRECT_URI = os.getenv('APPLE_REDIRECT_URI', 'http://localhost:5000/oaut
 
 @app.route('/')
 def index():
+    return render_template('home.html')
+
+@app.route('/start')
+def upload():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
@@ -180,22 +188,40 @@ def authorize(provider):
             flash('Invalid calendar provider.')
             logger.warning('Invalid calendar provider selected: %s', provider)
             return redirect(url_for('index'))
+        
         upload_id = session.get('upload_id')
-        courses = UPLOAD_CACHE.pop(upload_id, [])
-        provider_instance = CALENDAR_PROVIDERS[provider]
-        auth_url, state, flow = provider_instance.get_auth_url()
-        # Store only minimal state (code_verifier if present)
-        code_verifier = getattr(flow, 'code_verifier', None)
-        redis_set_json(f'oauth:{state}', {
-            'courses': courses,
-            'filename': session.get('pdf_filename'),
-            'provider': provider,
-            'code_verifier': code_verifier,
-        }, ex=600)
-        session['state'] = state
-        session['provider'] = provider
-        logger.info('OAuth flow started for provider: %s, state: %s', provider, state)
-        return redirect(auth_url)
+        courses = UPLOAD_CACHE.get(upload_id, [])
+        
+        if not courses:
+            flash('No courses found. Please upload a PDF first.')
+            return redirect(url_for('index'))
+        
+        if provider == 'apple':
+            # For Apple, bypass OAuth and go directly to event selection
+            session['display_courses'] = courses
+            session['display_filename'] = session.get('pdf_filename')
+            session['created_events'] = []
+            # Store a dummy service entry for Apple
+            redis_set_service(upload_id, provider, None)
+            logger.info('Apple provider selected, going directly to event selection')
+            return redirect(url_for('show_events'))
+        else:
+            # For Google, proceed with OAuth flow
+            courses = UPLOAD_CACHE.pop(upload_id, [])
+            provider_instance = CALENDAR_PROVIDERS[provider]
+            auth_url, state, flow = provider_instance.get_auth_url()
+            # Store only minimal state (code_verifier if present)
+            code_verifier = getattr(flow, 'code_verifier', None)
+            redis_set_json(f'oauth:{state}', {
+                'courses': courses,
+                'filename': session.get('pdf_filename'),
+                'provider': provider,
+                'code_verifier': code_verifier,
+            }, ex=600)
+            session['state'] = state
+            session['provider'] = provider
+            logger.info('OAuth flow started for provider: %s, state: %s', provider, state)
+            return redirect(auth_url)
     except Exception as e:
         logger.exception('Error starting OAuth flow')
         flash(f'Error starting OAuth flow: {str(e)}')
@@ -318,45 +344,67 @@ def create_selected_events():
         
         # Rebuild the service object for Google
         if provider_key == 'google':
-
             creds = Credentials.from_authorized_user_info(service_entry['credentials'])
             service = build('calendar', 'v3', credentials=creds)
-        else:
-            service = service_entry  # For Apple, keep as is
-        
-        created_events = []
-        for idx_str in selected_indices:
-            try:
-                idx = int(idx_str)
-            except ValueError:
-                continue
-            if 0 <= idx < len(courses):
-                course = courses[idx]
+            created_events = []
+            for idx_str in selected_indices:
                 try:
-                    logger.info('Creating event (user-selected) with data: %r', course)
-                    event = provider_instance.create_event(service, course)
-                    
-                    if provider_key == 'apple':
-                        # For Apple, return the ICS file for download
-                        return Response(
-                            event['ics_data'],
-                            mimetype='text/calendar',
-                            headers={
-                                'Content-Disposition': f'attachment; filename="{event["filename"]}"'
-                            }
-                        )
-                    else:
+                    idx = int(idx_str)
+                except ValueError:
+                    continue
+                if 0 <= idx < len(courses):
+                    course = courses[idx]
+                    try:
+                        logger.info('Creating event (user-selected) with data: %r', course)
+                        event = provider_instance.create_event(service, course)
                         created_events.append(event)
-                except Exception as event_exc:
-                    logger.exception('Error creating event for course: %r', course)
-                    flash(f"Error creating event for {course.get('Course', 'Unknown Course')}: {str(event_exc)}")
-
-        session['created_events'] = created_events
-        if created_events:
-            flash(f'Successfully created {len(created_events)} events in your calendar!')
+                    except Exception as event_exc:
+                        logger.exception('Error creating event for course: %r', course)
+                        flash(f"Error creating event for {course.get('Course', 'Unknown Course')}: {str(event_exc)}")
+            session['created_events'] = created_events
+            if created_events:
+                flash(f'Successfully created {len(created_events)} events in your calendar!')
+            else:
+                flash('No events were created.')
+            return redirect(url_for('show_events'))
         else:
-            flash('No events were created.')
-        return redirect(url_for('show_events'))
+            # For Apple, build the ICS file directly for selected events using icalendar
+            cal = ICalendar()
+            cal.add('prodid', '-//Schedule2Calendar//EN')
+            cal.add('version', '2.0')
+            for idx_str in selected_indices:
+                try:
+                    idx = int(idx_str)
+                except ValueError:
+                    continue
+                if 0 <= idx < len(courses):
+                    c = courses[idx]
+                    e = ICalendarEvent()
+                    e.add('summary', f"{c['Course']} ({c['Section']})")
+                    e.add('location', c['Location'])
+                    e.add('description', f"Instructor: {c['Instructor']}, Status: {c['Status']}, Mode: {c['DeliveryMode']}")
+                    # DTSTART/DTEND
+                    start_dt = _ics_start_datetime(c)
+                    end_dt = _ics_end_datetime(c)
+                    e.add('dtstart', datetime.fromisoformat(start_dt))
+                    e.add('dtend', datetime.fromisoformat(end_dt))
+                    # Add RRULE for recurrence
+                    days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
+                    days = ','.join([days_mapping.get(day, '') for day in c['Days'].split() if day in days_mapping])
+                    semester = c['Section'][:3]
+                    until_date = _ics_until_date(c['EndDate'], semester)
+                    if days:
+                        # icalendar wants UNTIL as a datetime object
+                        until_dt = datetime.strptime(until_date, '%Y%m%dT%H%M%SZ')
+                        e.add('rrule', {'freq': 'weekly', 'byday': days.split(','), 'until': until_dt})
+                        logger.info(f"Adding RRULE for course: {c['Course']} with days: {days} and until date: {until_date}")
+                    cal.add_component(e)
+            filename = session.get('display_filename', 'CourseSchedule.ics').replace('.pdf', '.ics').replace('.PDF', '.ics')
+            if not filename.lower().endswith('.ics'):
+                filename += '.ics'
+            return Response(cal.to_ical(), mimetype='text/calendar', headers={
+                'Content-Disposition': f'attachment; filename="{filename}"'
+            })
     except Exception as e:
         logger.exception('Error creating selected events')
         flash(f'Error creating selected events: {str(e)}')
@@ -434,12 +482,22 @@ def download_ics():
         e.end = _ics_end_datetime(c)
         e.location = c['Location']
         e.description = f"Instructor: {c['Instructor']}, Status: {c['Status']}, Mode: {c['DeliveryMode']}"
+        # Add RRULE for recurrence
+        days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
+        days = ','.join([days_mapping.get(day, '') for day in c['Days'].split() if day in days_mapping])
+        semester = c['Section'][:3]
+        until_date = _ics_until_date(c['EndDate'], semester)
+        if days:
+            logger.info(f"Adding RRULE for course: {c['Course']} with days: {days} and until date: {until_date}")
+            e.rrule = f"FREQ=WEEKLY;BYDAY={days};UNTIL={until_date}"
+        # Add DTSTAMP for RFC compliance
+        e.created = datetime.now(timezone.utc)
         cal.events.add(e)
     # Ensure the filename ends with .ics, not .pdf or .PDF
     ics_filename = filename.replace('.pdf', '.ics').replace('.PDF', '.ics')
     if not ics_filename.lower().endswith('.ics'):
         ics_filename += '.ics'
-    return Response(str(cal), mimetype='text/calendar', headers={
+    return Response(cal.serialize(), mimetype='text/calendar', headers={
         'Content-Disposition': f'attachment; filename="{ics_filename}"'
     })
 
@@ -455,6 +513,13 @@ def _ics_end_datetime(course):
     year = int('20' + course['Section'][1:3])
     dt = datetime.strptime(f"{course['StartDate']} {year} {course['End']}", '%d-%b %Y %H:%M')
     return dt.isoformat()
+
+def _ics_until_date(date_str, semester):
+    # Returns YYYYMMDDT000000Z for RRULE UNTIL
+    from datetime import datetime
+    year = int('20' + semester[1:3])
+    dt = datetime.strptime(date_str, '%d-%b').replace(year=year)
+    return dt.strftime('%Y%m%dT000000Z')
 
 # Route: ICS direct download from select-provider
 @app.route('/ics-direct', methods=['POST'])
@@ -478,9 +543,19 @@ def ics_direct():
         e.end = _ics_end_datetime(c)
         e.location = c['Location']
         e.description = f"Instructor: {c['Instructor']}, Status: {c['Status']}, Mode: {c['DeliveryMode']}"
+        # Add RRULE for recurrence
+        days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
+        days = ','.join([days_mapping.get(day, '') for day in c['Days'].split() if day in days_mapping])
+        semester = c['Section'][:3]
+        until_date = _ics_until_date(c['EndDate'], semester)
+        if days:
+            logger.info(f"Adding RRULE for course: {c['Course']} with days: {days} and until date: {until_date}")
+            e.rrule = f"FREQ=WEEKLY;BYDAY={days};UNTIL={until_date}"
+        # Add DTSTAMP for RFC compliance
+        e.created = datetime.now(timezone.utc)
         cal.events.add(e)
-    from flask import Response
-    return Response(str(cal), mimetype='text/calendar', headers={
+
+    return Response(cal.serialize(), mimetype='text/calendar', headers={
         'Content-Disposition': f'attachment; filename="{filename.replace('.pdf', '.ics').replace('.PDF', '.ics')}"'
     })
 
@@ -488,6 +563,10 @@ def ics_direct():
 @app.route('/privacy')
 def privacy():
     return render_template('privacy.html')
+
+@app.route('/home')
+def home():
+    return render_template('home.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

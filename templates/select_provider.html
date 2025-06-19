@@ -3,33 +3,30 @@
 {% block title %}Select Calendar Provider - Schedule2Calendar{% endblock %}
 
 {% block content %}
-<div class="bg-white shadow sm:rounded-lg">
-    <div class="px-4 py-5 sm:p-6">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Select Your Calendar Provider</h2>
-        <div class="mt-2 max-w-xl text-sm text-gray-500">
+<div class="card shadow">
+    <div class="card-body">
+        <h2 class="h5 fw-bold text-light mb-3">Select Your Calendar Provider</h2>
+        <div class="mb-3 text-muted small">
             <p>Choose your calendar provider to create events:</p>
         </div>
-        
-        <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="row g-3 mt-3">
             {% for provider in providers %}
-            <a href="{{ url_for('authorize', provider=provider.get_provider_key()) }}" 
-               class="relative block w-full rounded-lg border border-gray-300 p-4 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <img class="h-12 w-12" src="{{ provider.get_provider_icon() }}" alt="{{ provider.get_provider_name() }} logo">
+            <div class="col-md-6">
+                <a href="{{ url_for('authorize', provider=provider.get_provider_key()) }}" class="card h-100 text-decoration-none text-light bg-secondary bg-opacity-25 border-0 shadow-sm p-3 hover-shadow">
+                    <div class="d-flex align-items-center">
+                        <img class="me-3" style="height: 3rem; width: 3rem;" src="{{ provider.get_provider_icon() }}" alt="{{ provider.get_provider_name() }} logo">
+                        <div>
+                            <h3 class="h6 fw-bold text-light mb-1">{{ provider.get_provider_name() }}</h3>
+                            {% if provider.get_provider_key() == "google" %}
+                                <p class="text-muted small mb-0">Connect with your Google account</p>
+                            {% elif provider.get_provider_key() == "apple" %}
+                                <p class="text-muted small mb-0">Download ICS for Apple/Outlook (No Login Required)</p>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-medium text-gray-900">{{ provider.get_provider_name() }}</h3>
-                        <p class="text-sm text-gray-500">Connect with your {{ provider.get_provider_name() }} account</p>
-                    </div>
-                </div>
-            </a>
+                </a>
+            </div>
             {% endfor %}
-        </div>
-        <div class="mt-8 text-center">
-            <form action="{{ url_for('ics_direct') }}" method="POST">
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg text-lg shadow">Download ICS for Apple/Outlook (No Login Required)</button>
-            </form>
         </div>
     </div>
 </div>

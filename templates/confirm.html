@@ -3,31 +3,27 @@
 {% block title %}Confirm Events - Schedule2Calendar{% endblock %}
 
 {% block content %}
-<div class="bg-white shadow sm:rounded-lg">
-    <div class="px-4 py-5 sm:p-6">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Confirm Your Events</h2>
-        <div class="mt-2 max-w-xl text-sm text-gray-500">
+<div class="card shadow">
+    <div class="card-body">
+        <h2 class="h5 fw-bold text-light mb-3">Confirm Your Events</h2>
+        <div class="mb-3 text-muted small">
             <p>The following events will be created in your calendar:</p>
         </div>
         {% if filename %}
-        <div class="flex items-center mt-4 mb-2">
-            <img src="/static/pdf-icon.png" alt="PDF" class="h-6 w-6 mr-2">
-            <span class="text-sm text-gray-700">{{ filename }}</span>
+        <div class="d-flex align-items-center mb-2">
+            <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;" class="me-2">
+            <span class="text-light small">{{ filename }}</span>
         </div>
         {% endif %}
-        <div class="mt-4 bg-gray-50 rounded-lg p-4">
-            <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ course_details }}</pre>
+        <div class="mb-4 bg-secondary bg-opacity-25 rounded p-3">
+            <pre class="text-light small mb-0">{{ course_details }}</pre>
         </div>
-        <div class="mt-6 space-y-4">
-            <a href="{{ url_for('authorize', provider=session.get('provider', 'google')) }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+        <div class="mt-4 d-flex gap-2">
+            <a href="{{ url_for('authorize', provider=session.get('provider', 'google')) }}" class="btn btn-primary d-flex align-items-center">
+                <span class="me-2"><i class="bi bi-calendar-plus"></i></span>
                 Authorize and Create Events
             </a>
-            <a href="{{ url_for('index') }}" class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Cancel
-            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light ms-2">Cancel</a>
         </div>
     </div>
 </div>
