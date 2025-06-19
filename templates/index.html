@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Schedule - Schedule2Calendar{% endblock %}
+{% block title %}Upload Schedule - SchedShare{% endblock %}
 
 {% block content %}
 {% with messages = get_flashed_messages() %}
@@ -24,7 +24,10 @@
 <!-- Hero Section -->
 <div class="card shadow mb-5">
     <div class="card-body text-center py-5">
-        <h1 class="display-4 fw-bold text-primary mb-2">Schedule2Calendar</h1>
+        <h1 class="display-4 fw-bold text-light mb-2 d-inline-flex align-items-center">
+            <i class="bi bi-calendar-check-fill text-primary me-3"></i>
+            <span>Sched<span class="text-primary">Share</span></span>
+        </h1>
         <p class="lead text-light mb-4">Turn your course schedule PDF into calendar events in seconds!</p>
         <button id="getStartedBtn" class="btn btn-primary btn-lg shadow">Get Started</button>
     </div>
@@ -58,12 +61,13 @@
     <div class="d-flex justify-content-center gap-4 align-items-center">
         <img src="/static/google-calendar.png" alt="Google Calendar" style="height: 2.5rem; width: 2.5rem;" />
         <img src="/static/apple-calendar.png" alt="Apple Calendar" style="height: 2.5rem; width: 2.5rem;" />
+        <img src="/static/outlook-calendar.png" alt="Outlook Calendar" style="height: 2.5rem; width: 2.5rem;" />
     </div>
 </div>
 
 <!-- Testimonials / Why Use This? -->
 <div class="container mb-5">
-    <h3 class="h5 fw-semibold text-center mb-3">Why Use Schedule2Calendar?</h3>
+    <h3 class="h5 fw-semibold text-center mb-3">Why Use SchedShare?</h3>
     <div class="row g-4 text-center">
         <div class="col-md-4">
             <div class="card bg-dark text-light h-100 shadow">

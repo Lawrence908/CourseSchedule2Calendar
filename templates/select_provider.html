@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Select Calendar Provider - Schedule2Calendar{% endblock %}
+{% block title %}Select Calendar Provider - SchedShare{% endblock %}
 
 {% block content %}
 <div class="card shadow">
@@ -10,24 +10,44 @@
             <p>Choose your calendar provider to create events:</p>
         </div>
         <div class="row g-3 mt-3">
-            {% for provider in providers %}
+            <!-- Google Calendar Option -->
             <div class="col-md-6">
-                <a href="{{ url_for('authorize', provider=provider.get_provider_key()) }}" class="card h-100 text-decoration-none text-light bg-secondary bg-opacity-25 border-0 shadow-sm p-3 hover-shadow">
+                <a href="{{ url_for('authorize', provider='google') }}" class="card h-100 text-decoration-none text-light bg-secondary bg-opacity-25 border-0 shadow-sm p-3 hover-shadow">
                     <div class="d-flex align-items-center">
-                        <img class="me-3" style="height: 3rem; width: 3rem;" src="{{ provider.get_provider_icon() }}" alt="{{ provider.get_provider_name() }} logo">
+                        <img class="me-3" style="height: 3rem; width: 3rem;" src="/static/google-calendar.png" alt="Google Calendar logo">
                         <div>
-                            <h3 class="h6 fw-bold text-light mb-1">{{ provider.get_provider_name() }}</h3>
-                            {% if provider.get_provider_key() == "google" %}
-                                <p class="text-muted small mb-0">Connect with your Google account</p>
-                            {% elif provider.get_provider_key() == "apple" %}
-                                <p class="text-muted small mb-0">Download ICS for Apple/Outlook (No Login Required)</p>
-                            {% endif %}
+                            <h3 class="h6 fw-bold text-light mb-1">Google Calendar</h3>
+                            <p class="text-muted small mb-0">Connect with your Google account</p>
                         </div>
                     </div>
                 </a>
             </div>
-            {% endfor %}
+            <!-- Apple/Outlook Calendar Option -->
+            <div class="col-md-6">
+                <a href="{{ url_for('authorize', provider='apple') }}" class="card h-100 text-decoration-none text-light bg-secondary bg-opacity-25 border-0 shadow-sm p-3 hover-shadow">
+                    <div class="d-flex align-items-center">
+                        <div class="d-flex me-3" style="height: 3rem;">
+                            <img class="me-1" style="height: 3rem; width: 3rem;" src="/static/apple-calendar.png" alt="Apple Calendar logo">
+                            <img style="height: 3rem; width: 3rem;" src="/static/outlook-calendar.png" alt="Outlook Calendar logo">
+                        </div>
+                        <div>
+                            <h3 class="h6 fw-bold text-light mb-1">Apple or Outlook Calendar</h3>
+                            <p class="text-muted small mb-0">Download ICS file (No Login Required)</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+.hover-shadow {
+    transition: all 0.2s ease-in-out;
+}
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+}
+</style>
 {% endblock %} 
