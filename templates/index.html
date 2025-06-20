@@ -3,6 +3,24 @@
 {% block title %}Upload Schedule - SchedShare{% endblock %}
 
 {% block content %}
+<style>
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+  }
+}
+
+#drop-zone {
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  animation: pulse-border 2s infinite;
+}
+</style>
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     <div id="flash-message" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50">
@@ -21,20 +39,8 @@
   {% endif %}
 {% endwith %}
 
-<!-- Hero Section -->
-<div class="card shadow mb-5">
-    <div class="card-body text-center py-5">
-        <h1 class="display-4 fw-bold text-light mb-2 d-inline-flex align-items-center">
-            <i class="bi bi-calendar-check-fill text-primary me-3"></i>
-            <span>Sched<span class="text-primary">Share</span></span>
-        </h1>
-        <p class="lead text-light mb-4">Turn your course schedule PDF into calendar events in seconds!</p>
-        <button id="getStartedBtn" class="btn btn-primary btn-lg shadow">Get Started</button>
-    </div>
-</div>
-
 <!-- How it Works -->
-<div class="container mb-5">
+<div class="container my-5">
     <h2 class="h4 fw-semibold text-center mb-4">How it Works</h2>
     <div class="row text-center g-4">
         <div class="col">
@@ -96,8 +102,8 @@
     </div>
 </div>
 
-<!-- Upload Form (hidden until Get Started) -->
-<div id="uploadSection" class="d-none">
+<!-- Upload Form (now visible) -->
+<div id="uploadSection">
     <div class="card shadow">
         <div class="card-body">
             <div class="mb-3 text-end">
@@ -115,7 +121,7 @@
             </div>
             <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
                 <div class="upload-area mb-4">
-                    <div id="drop-zone" class="border border-2 border-dashed rounded-3 p-4 text-center position-relative">
+                    <div id="drop-zone" class="border border-primary border-2 border-dashed rounded-3 p-4 text-center position-relative bg-primary bg-opacity-10">
                         <input id="file" name="file" type="file" class="position-absolute w-100 h-100 opacity-0" style="top: 0; left: 0; cursor: pointer;" accept=".pdf" required />
                         <div class="py-4">
                             <img src="/static/pdf-icon.png" alt="PDF icon" style="height: 48px; width: 48px;" class="mb-3">
@@ -136,32 +142,26 @@
     </div>
 </div>
 <script>
-const getStartedBtn = document.getElementById('getStartedBtn');
-const uploadSection = document.getElementById('uploadSection');
 const fileInput = document.getElementById('file');
 const dropZone = document.getElementById('drop-zone');
-
-if (getStartedBtn) {
-    getStartedBtn.addEventListener('click', () => {
-        uploadSection.classList.remove('d-none');
-        uploadSection.scrollIntoView({ behavior: 'smooth' });
-    });
-}
 
 // Handle drag and drop
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropZone.classList.add('border-primary');
+    dropZone.classList.remove('bg-opacity-10');
+    dropZone.classList.add('bg-opacity-25');
 });
 
 dropZone.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('border-primary');
+    dropZone.classList.remove('bg-opacity-25');
+    dropZone.classList.add('bg-opacity-10');
 });
 
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('border-primary');
+    dropZone.classList.remove('bg-opacity-25');
+    dropZone.classList.add('bg-opacity-10');
     if (e.dataTransfer.files.length) {
         fileInput.files = e.dataTransfer.files;
         updateFileName(e.dataTransfer.files[0]);
