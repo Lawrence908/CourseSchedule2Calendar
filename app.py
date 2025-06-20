@@ -147,7 +147,7 @@ def upload_file():
             session['upload_id'] = upload_id
             session['pdf_filename'] = filename
             logger.info('PDF uploaded and parsed: %s, found %d courses', filename, len(courses))
-            return redirect(url_for('select_provider'))
+            return redirect(url_for('show_events'))
         flash('Invalid file type. Please upload a PDF.')
         logger.info("Invalid file type. Redirecting to index.")
         return redirect(url_for('index'))
@@ -255,7 +255,7 @@ def oauth2callback():
             flash('OAuth flow expired or invalid. Please try again.')
             return redirect(url_for('index'))
         
-        courses = cache_entry.get('courses', [])
+        selected_courses = cache_entry.get('selected_courses', [])
         filename = cache_entry.get('filename')
         code_verifier = cache_entry.get('code_verifier')
         
@@ -268,150 +268,142 @@ def oauth2callback():
         else:
             auth_response = request.url
         
-        # Build provider service but do NOT create events yet. Store service for later use.
         if provider == 'google':
-            from google_auth_oauthlib.flow import Flow
-            flow = Flow.from_client_secrets_file(
-                'credentials.json',
-                scopes=GoogleCalendarProvider.SCOPES,
-                redirect_uri='http://localhost:5000/oauth2callback'
-            )
-            if code_verifier:
-                flow.code_verifier = code_verifier
-            service = provider_instance.handle_callback(auth_response, flow)
-        else:
-            service = provider_instance.handle_callback(auth_response, None)
+            try:
+                from google_auth_oauthlib.flow import Flow
+                flow = Flow.from_client_secrets_file(
+                    'credentials.json',
+                    scopes=GoogleCalendarProvider.SCOPES,
+                    redirect_uri='http://localhost:5000/oauth2callback'
+                )
+                if code_verifier:
+                    flow.code_verifier = code_verifier
+                
+                service = provider_instance.handle_callback(auth_response, flow)
+                
+                created_events = []
+                if selected_courses:
+                    for course in selected_courses:
+                        try:
+                            created_event = provider_instance.create_event(service, course)
+                            created_events.append(created_event)
+                        except Exception as e:
+                            logger.error(f"Error creating event for course {course.get('Course')}: {e}")
+                            flash(f"Error creating event for {course.get('Course')}. It might already exist or there was an API issue.", "warning")
+
+                session['created_events'] = created_events
+                session['pdf_filename'] = filename
+                session['provider'] = 'google'
+                
+                logger.info(f"Successfully created {len(created_events)} Google Calendar events.")
+                return redirect(url_for('show_confirmation'))
+
+            except Exception as e:
+                logger.exception('Error during Google event creation')
+                flash(f'An error occurred creating Google Calendar events: {str(e)}')
+                return redirect(url_for('index'))
         
-        upload_id = session.get('upload_id')
-        if upload_id:
-            # Store provider key and credentials in Redis
-            if provider == 'apple':
-                # For Apple, store the tokens directly
-                redis_set_service(upload_id, provider, service)
-            else:
-                # For Google, store the credentials dict
-                creds_dict = getattr(service._http.credentials, 'to_json', lambda: None)()
-                if creds_dict:
-                    creds_dict = json.loads(creds_dict)
-                redis_set_service(upload_id, provider, creds_dict)
-        
-        # Retain courses for display; events will be created after user selection.
-        session['created_events'] = []
-        session['display_courses'] = courses
-        session['display_filename'] = filename
-        logger.info('OAuth callback completed; waiting for user course selection.')
-        return redirect(url_for('show_events'))
+        # Fallback for other providers or if something went wrong
+        # The old logic here was redirecting to show_events, which is not correct for the post-oauth flow.
+        # Apple/ICS flow doesn't hit this callback.
+        logger.warning(f"OAuth callback hit for unhandled provider: {provider}")
+        flash("Authentication process for the selected provider is not correctly handled after callback.")
+        return redirect(url_for('index'))
+
     except Exception as e:
         logger.exception('Error handling OAuth callback')
-        flash(f'Error handling OAuth callback: {str(e)}')
+        flash(f'An error occurred: {str(e)}')
         return redirect(url_for('index'))
 
 @app.route('/events')
 def show_events():
-    try:
-        created_events = session.get('created_events', [])
-        courses = session.get('display_courses', [])
-        filename = session.get('display_filename', None)
-        if not courses:
-            flash('No courses found. Please upload a PDF first.')
-            return redirect(url_for('index'))
-        return render_template('events.html', courses=courses, filename=filename, created_events=created_events)
-    except Exception as e:
-        logger.exception('Error displaying events page')
-        flash(f'Error displaying events page: {str(e)}')
+    upload_id = session.get('upload_id')
+    courses = UPLOAD_CACHE.get(upload_id, [])
+    if not courses:
+        flash('Your session has expired. Please upload your schedule again.')
         return redirect(url_for('index'))
-
-# ---------- New route: create events for selected courses ----------
+    filename = session.get('pdf_filename')
+    created_events = session.pop('created_events', [])
+    email_sent = session.pop('email_sent', False)
+    return render_template('events.html', courses=courses, filename=filename, created_events=created_events, email_sent=email_sent)
 
 @app.route('/create-events', methods=['POST'])
 def create_selected_events():
-    try:
-        selected_raw = request.form.get('selected', '')
-        selected_indices = [s for s in selected_raw.split(',') if s]
-        if not selected_indices:
-            flash('Please select at least one course to create events.')
-            return redirect(url_for('show_events'))
+    upload_id = session.get('upload_id')
+    courses = UPLOAD_CACHE.get(upload_id)
+    if not courses:
+        flash('Your session has expired. Please upload your schedule again.')
+        return redirect(url_for('index'))
 
-        courses = session.get('display_courses', [])
-        upload_id = session.get('upload_id')
-        service_entry = redis_get_service(upload_id)
-        if not service_entry:
-            flash('Session expired. Please restart the authorization process.')
-            return redirect(url_for('index'))
-
-        provider_key = service_entry['provider']
-        provider_instance = CALENDAR_PROVIDERS[provider_key]
-        
-        # Rebuild the service object for Google
-        if provider_key == 'google':
-            creds = Credentials.from_authorized_user_info(service_entry['credentials'])
-            service = build('calendar', 'v3', credentials=creds)
-            created_events = []
-            for idx_str in selected_indices:
-                try:
-                    idx = int(idx_str)
-                except ValueError:
-                    continue
-                if 0 <= idx < len(courses):
-                    course = courses[idx]
-                    try:
-                        logger.info('Creating event (user-selected) with data: %r', course)
-                        event = provider_instance.create_event(service, course)
-                        created_events.append(event)
-                    except Exception as event_exc:
-                        logger.exception('Error creating event for course: %r', course)
-                        flash(f"Error creating event for {course.get('Course', 'Unknown Course')}: {str(event_exc)}")
-            session['created_events'] = created_events
-            if created_events:
-                flash(f'Successfully created {len(created_events)} events in your calendar!')
-            else:
-                flash('No events were created.')
-            return redirect(url_for('show_events'))
-        else:
-            # For Apple, build the ICS file directly for selected events using icalendar
-            cal = ICalendar()
-            cal.add('prodid', '-//Schedule2Calendar//EN')
-            cal.add('version', '2.0')
-            for idx_str in selected_indices:
-                try:
-                    idx = int(idx_str)
-                except ValueError:
-                    continue
-                if 0 <= idx < len(courses):
-                    c = courses[idx]
-                    e = ICalendarEvent()
-                    e.add('summary', f"{c['Course']} ({c['Section']})")
-                    e.add('location', c['Location'])
-                    e.add('description', f"Instructor: {c['Instructor']}, Status: {c['Status']}, Mode: {c['DeliveryMode']}")
-                    # DTSTART/DTEND
-                    start_dt = _ics_start_datetime(c)
-                    end_dt = _ics_end_datetime(c)
-                    e.add('dtstart', datetime.fromisoformat(start_dt))
-                    e.add('dtend', datetime.fromisoformat(end_dt))
-                    # Add RRULE for recurrence
-                    days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
-                    days = ','.join([days_mapping.get(day, '') for day in c['Days'].split() if day in days_mapping])
-                    semester = c['Section'][:3]
-                    until_date = _ics_until_date(c['EndDate'], semester)
-                    if days:
-                        # icalendar wants UNTIL as a datetime object
-                        until_dt = datetime.strptime(until_date, '%Y%m%dT%H%M%SZ')
-                        e.add('rrule', {'freq': 'weekly', 'byday': days.split(','), 'until': until_dt})
-                        logger.info(f"Adding RRULE for course: {c['Course']} with days: {days} and until date: {until_date}")
-                    cal.add_component(e)
-            filename = session.get('display_filename', 'CourseSchedule.ics').replace('.pdf', '.ics').replace('.PDF', '.ics')
-            if not filename.lower().endswith('.ics'):
-                filename += '.ics'
-            return Response(cal.to_ical(), mimetype='text/calendar', headers={
-                'Content-Disposition': f'attachment; filename="{filename}"'
-            })
-    except Exception as e:
-        logger.exception('Error creating selected events')
-        flash(f'Error creating selected events: {str(e)}')
+    selected_indices = request.form.get('selected', '').split(',')
+    if not selected_indices or not selected_indices[0]:
+        flash('You did not select any events to create.')
         return redirect(url_for('show_events'))
+    
+    selected_courses = [courses[int(i)] for i in selected_indices if i.isdigit() and 0 <= int(i) < len(courses)]
+    session['selected_courses'] = selected_courses
+    
+    provider = request.form.get('provider')
+    session['provider'] = provider
+
+    if provider == 'google':
+        provider_instance = CALENDAR_PROVIDERS.get(provider)
+        if not provider_instance:
+            flash('Invalid calendar provider selected.')
+            return redirect(url_for('show_events'))
+        auth_url, state, flow = provider_instance.get_auth_url()
+        code_verifier = getattr(flow, 'code_verifier', None)
+        redis_set_json(f'oauth:{state}', {
+            'selected_courses': selected_courses,
+            'filename': session.get('pdf_filename'),
+            'provider': provider,
+            'code_verifier': code_verifier,
+        }, ex=600)
+        session['state'] = state
+        return redirect(auth_url)
+    
+    elif provider == 'apple':
+        # For Apple/Outlook, we now trigger a download and then show confirmation
+        # The actual download will happen via a separate request from the confirm page
+        flash('Your ICS file is ready for download.')
+        return redirect(url_for('show_confirmation'))
+
+    else:
+        flash("Invalid provider selected.")
+        return redirect(url_for('show_events'))
+
+@app.route('/confirmation')
+def show_confirmation():
+    created_events = session.get('created_events', [])
+    selected_courses = session.get('selected_courses', [])
+    courses = UPLOAD_CACHE.get(session.get('upload_id'), [])
+    
+    # For Apple/Outlook, we create a summary from selected_courses
+    if not created_events and session.get('provider') == 'apple':
+        created_events = [{'summary': f"{c['Course']} - {c['Section']}"} for c in selected_courses]
+
+    if not created_events and not selected_courses:
+        flash('No events were created or your session has expired.')
+        return redirect(url_for('index'))
+
+    return render_template('confirm.html',
+                           created_events=created_events,
+                           course_details=get_course_details_string(courses),
+                           filename=session.get('pdf_filename'),
+                           email_sent=session.pop('email_sent', False),
+                           provider=session.get('provider'))
+
+def get_course_details_string(courses):
+    if not courses:
+        return "No course details available."
+    return "\n".join([
+        f"{course['Course']} - {course['Days']} {course['Start']} - {course['End']}"
+        for course in courses
+    ])
 
 @app.route('/clear-session')
 def clear_session():
+    upload_id = session.pop('upload_id', None)
     session.clear()
     flash('Session cleared!')
     return redirect(url_for('index'))
@@ -420,86 +412,71 @@ def clear_session():
 @app.route('/send-email-summary', methods=['POST'])
 def send_email_summary():
     email = request.form.get('email')
-    # Only include user-selected (created) events
     created_events = session.get('created_events', [])
-    filename = session.get('display_filename', 'CourseSchedule.pdf')
+    
     if not email or not created_events:
-        flash('Missing email or created event data.')
-        return redirect(url_for('show_events'))
-    # Store email in Redis set
-    redis_client.sadd('emails', email)
-    # Improved subject
-    subject = "Schedule2Calendar - Your Course Calendar Events"
-    # Improved HTML body
-    from flask import render_template_string
-    html_body = render_template_string("""
-        <h2>Your Course Events from {{ filename }}</h2>
-        <ul>
-        {% for c in events %}
-            <li>
-                <b>{{ c['summary'] }}</b><br>
-                <span>{{ c.get('description', '') }}</span><br>
-                <span>{{ c.get('location', '') }}</span><br>
-                {% if c.get('start') and c['start'].get('dateTime') and c.get('end') and c['end'].get('dateTime') %}
-                    <span>{{ c['start']['dateTime'] }} - {{ c['end']['dateTime'] }}</span>
-                {% endif %}
-            </li>
-        {% endfor %}
-        </ul>
-        <p>Thank you for using Schedule2Calendar!</p>
-    """, events=created_events, filename=filename)
-    # Fallback plain text
-    text_body = f"Here are your course events from {filename}:\n\n"
-    for c in created_events:
-        text_body += f"{c.get('summary', '')}: {c.get('description', '')} at {c.get('location', '')} "
-        if c.get('start') and c['start'].get('dateTime') and c.get('end') and c['end'].get('dateTime'):
-            text_body += f"({c['start']['dateTime']} to {c['end']['dateTime']})"
-        text_body += "\n"
+        flash('Could not send email. Missing data.')
+        return redirect(url_for('show_confirmation'))
+
+    html_body = render_template('email_summary.html', events=created_events)
+    msg = Message("Your SchedShare Event Summary",
+                  recipients=[email],
+                  html=html_body)
     try:
-        msg = Message(subject, recipients=[email])
-        msg.body = text_body
-        msg.html = html_body
         mail.send(msg)
-        flash('Email sent successfully!')
+        flash('Email summary sent successfully!')
+        session['email_sent'] = True
     except Exception as e:
-        logger.exception('Error sending email')
-        flash(f'Error sending email: {str(e)}')
-    return redirect(url_for('show_events'))
+        logger.exception("Email sending failed")
+        flash(f"Failed to send email: {e}")
+
+    return redirect(url_for('show_confirmation'))
 
 # Route: Download ICS file
 @app.route('/download-ics', methods=['POST'])
 def download_ics():
-    courses = session.get('display_courses', [])
-    filename = session.get('display_filename', 'CourseSchedule.ics')
-    if not courses:
-        flash('No courses to export.')
-        return redirect(url_for('show_events'))
-    cal = Calendar()
-    for c in courses:
-        e = Event()
-        e.name = f"{c['Course']} ({c['Section']})"
-        e.begin = _ics_start_datetime(c)
-        e.end = _ics_end_datetime(c)
-        e.location = c['Location']
-        e.description = f"Instructor: {c['Instructor']}, Status: {c['Status']}, Mode: {c['DeliveryMode']}"
-        # Add RRULE for recurrence
-        days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
-        days = ','.join([days_mapping.get(day, '') for day in c['Days'].split() if day in days_mapping])
-        semester = c['Section'][:3]
-        until_date = _ics_until_date(c['EndDate'], semester)
-        if days:
-            logger.info(f"Adding RRULE for course: {c['Course']} with days: {days} and until date: {until_date}")
-            e.rrule = f"FREQ=WEEKLY;BYDAY={days};UNTIL={until_date}"
-        # Add DTSTAMP for RFC compliance
-        e.created = datetime.now(timezone.utc)
-        cal.events.add(e)
-    # Ensure the filename ends with .ics, not .pdf or .PDF
-    ics_filename = filename.replace('.pdf', '.ics').replace('.PDF', '.ics')
-    if not ics_filename.lower().endswith('.ics'):
-        ics_filename += '.ics'
-    return Response(cal.serialize(), mimetype='text/calendar', headers={
-        'Content-Disposition': f'attachment; filename="{ics_filename}"'
-    })
+    courses_to_export = session.get('selected_courses', [])
+    
+    if not courses_to_export:
+        flash('No selected courses to export. Your session might have expired.')
+        return redirect(url_for('index'))
+
+    cal = ICalendar()
+    cal.add('prodid', '-//SchedShare//EN')
+    cal.add('version', '2.0')
+
+    for c in courses_to_export:
+        try:
+            e = ICalendarEvent()
+            e.add('summary', f"{c.get('Course', 'N/A')} ({c.get('Section', 'N/A')})")
+            e.add('location', c.get('Location', 'N/A'))
+            e.add('description', f"Instructor: {c.get('Instructor', 'N/A')}, Status: {c.get('Status', 'N/A')}, Mode: {c.get('DeliveryMode', 'N/A')}")
+            
+            start_dt = _ics_start_datetime(c)
+            end_dt = _ics_end_datetime(c)
+            if start_dt and end_dt:
+                e.add('dtstart', datetime.fromisoformat(start_dt))
+                e.add('dtend', datetime.fromisoformat(end_dt))
+            
+            days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
+            days = [days_mapping.get(day) for day in c.get('Days', '').split() if day in days_mapping]
+            
+            if days:
+                semester = c.get('Section', '')[:3]
+                until_date_str = _ics_until_date(c['EndDate'], semester)
+                until_dt = datetime.strptime(until_date_str, '%Y%m%dT%H%M%SZ')
+                e.add('rrule', {'freq': 'weekly', 'byday': days, 'until': until_dt})
+            
+            cal.add_component(e)
+        except Exception as ex:
+            logger.warning(f"Could not create .ics event for course {c.get('Course')}. Error: {ex}")
+            continue
+
+    return Response(
+        cal.to_ical(),
+        mimetype="text/calendar",
+        headers={"Content-disposition": "attachment; filename=schedule.ics"}
+    )
 
 def _ics_start_datetime(course):
     # Returns ISO string for ics Event begin
