@@ -18,17 +18,30 @@
     .selection-indicator {
         transition: opacity 0.2s ease-in-out;
     }
+    .provider-selection {
+        cursor: pointer;
+        padding: 1rem;
+        border: 2px solid transparent;
+        border-radius: .5rem;
+    }
+    .provider-selection.selected {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+    }
 </style>
 
 <div class="card shadow">
     <div class="card-body">
+        {% if get_flashed_messages() %}
+        {# The flashed messages will be displayed at the top from base.html #}
+        {% endif %}
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h2 class="h5 fw-bold text-light">Identified Events</h2>
             <button id="toggleEvents" class="btn btn-sm btn-outline-light" type="button">
-                <span id="arrowIcon" class="bi bi-chevron-down"></span>
+                <span id="arrowIcon" class="bi {% if created_events %}bi-chevron-up{% else %}bi-chevron-down{% endif %}"></span>
             </button>
         </div>
-        <div id="eventsSection">
+        <div id="eventsSection" {% if created_events %}class="d-none"{% endif %}>
         {% if filename %}
         <div class="d-flex align-items-center mb-3">
             <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;" class="me-2">
@@ -37,10 +50,11 @@
         {% endif %}
         <form id="eventForm" action="{{ url_for('create_selected_events') }}" method="POST">
             <input type="hidden" name="selected" id="selectedInput" />
+            <input type="hidden" name="provider" id="providerInput" />
             <div class="row g-3">
                 {% for course in courses %}
                 <div data-index="{{ loop.index0 }}" class="col-md-6 col-lg-4">
-                    <div class="card h-100 event-card bg-secondary bg-opacity-25 text-light cursor-pointer">
+                    <div class="card h-100 event-card bg-secondary bg-opacity-25 text-light" style="cursor: pointer;">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h3 class="h6 fw-bold text-primary mb-0">{{ course['Course'] }}</h3>
@@ -60,8 +74,38 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- Provider Selection -->
+            <div class="mt-4">
+                <h3 class="h6 fw-bold text-light mb-3">Choose Your Calendar</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="provider-selection bg-secondary bg-opacity-25" data-provider="google">
+                            <div class="d-flex align-items-center">
+                                <img class="me-3" style="height: 2.5rem; width: 2.5rem;" src="/static/google-calendar.png" alt="Google Calendar logo">
+                                <div>
+                                    <h4 class="h6 fw-bold text-light mb-1">Google Calendar</h4>
+                                    <p class="text-muted small mb-0">Sync with your Google account</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                         <div class="provider-selection bg-secondary bg-opacity-25" data-provider="apple">
+                            <div class="d-flex align-items-center">
+                                <img class="me-3" style="height: 2.5rem; width: 2.5rem;" src="/static/apple-calendar.png" alt="Apple Calendar logo">
+                                <div>
+                                    <h4 class="h6 fw-bold text-light mb-1">Apple/Outlook Calendar</h4>
+                                    <p class="text-muted small mb-0">Download .ICS file</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-4 text-end">
-                <button type="submit" class="btn btn-primary" id="createBtn" disabled>Create Selected Events</button>
+                <button type="submit" class="btn btn-primary" id="createBtn" disabled>Create Events</button>
             </div>
         </form>
         </div>
@@ -100,14 +144,16 @@
         const cards = document.querySelectorAll('.event-card');
         const selectedInput = document.getElementById('selectedInput');
         const createBtn = document.getElementById('createBtn');
-        const selectedSet = new Set();
-        const toggleBtn = document.getElementById('toggleEvents');
-        const eventsSection = document.getElementById('eventsSection');
-        const arrowIcon = document.getElementById('arrowIcon');
+        const providerSelections = document.querySelectorAll('.provider-selection');
+        const providerInput = document.getElementById('providerInput');
 
-        function updateForm() {
+        const selectedSet = new Set();
+        let selectedProvider = null;
+
+        function updateFormState() {
             selectedInput.value = Array.from(selectedSet).join(',');
-            createBtn.disabled = selectedSet.size === 0;
+            providerInput.value = selectedProvider;
+            createBtn.disabled = selectedSet.size === 0 || !selectedProvider;
         }
 
         cards.forEach((card, idx) => {
@@ -123,9 +169,22 @@
                     card.classList.add('selected');
                     checkmark.classList.remove('opacity-0');
                 }
-                updateForm();
+                updateFormState();
             });
         });
+
+        providerSelections.forEach(selection => {
+            selection.addEventListener('click', () => {
+                providerSelections.forEach(s => s.classList.remove('selected'));
+                selection.classList.add('selected');
+                selectedProvider = selection.getAttribute('data-provider');
+                updateFormState();
+            });
+        });
+
+        const toggleBtn = document.getElementById('toggleEvents');
+        const eventsSection = document.getElementById('eventsSection');
+        const arrowIcon = document.getElementById('arrowIcon');
 
         if (toggleBtn && eventsSection && arrowIcon) {
             toggleBtn.addEventListener('click', () => {

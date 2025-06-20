@@ -1,30 +1,87 @@
 {% extends "base.html" %}
 
-{% block title %}Confirm Events - SchedShare{% endblock %}
+{% block title %}Your Events - SchedShare{% endblock %}
 
 {% block content %}
 <div class="card shadow">
     <div class="card-body">
-        <h2 class="h5 fw-bold text-light mb-3">Confirm Your Events</h2>
-        <div class="mb-3 text-muted small">
-            <p>The following events will be created in your calendar:</p>
+        {# Flashed messages are handled by the base template #}
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 fw-bold text-light">Identified Events</h2>
+            <button id="toggleEvents" class="btn btn-sm btn-outline-light" type="button">
+                <span id="arrowIcon" class="bi bi-chevron-up"></span>
+            </button>
         </div>
-        {% if filename %}
-        <div class="d-flex align-items-center mb-2">
-            <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;" class="me-2">
-            <span class="text-light small">{{ filename }}</span>
+
+        <div id="eventsSection" class="d-none">
+            {% if filename %}
+                <div class="d-flex align-items-center mb-2">
+                    <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;" class="me-2">
+                    <span class="text-light small">{{ filename }}</span>
+                </div>
+            {% endif %}
+            <div class="mb-4 bg-secondary bg-opacity-25 rounded p-3">
+                <pre class="text-light small mb-0">{{ course_details }}</pre>
+            </div>
         </div>
-        {% endif %}
-        <div class="mb-4 bg-secondary bg-opacity-25 rounded p-3">
-            <pre class="text-light small mb-0">{{ course_details }}</pre>
-        </div>
-        <div class="mt-4 d-flex gap-2">
-            <a href="{{ url_for('authorize', provider=session.get('provider', 'google')) }}" class="btn btn-primary d-flex align-items-center">
-                <span class="me-2"><i class="bi bi-calendar-plus"></i></span>
-                Authorize and Create Events
-            </a>
-            <a href="{{ url_for('index') }}" class="btn btn-outline-light ms-2">Cancel</a>
+        
+        <div class="mt-4">
+            <h3 class="h6 fw-bold text-success mb-2">Created Events</h3>
+            <ul class="list-group mb-4">
+                {% for event in created_events %}
+                <li class="list-group-item bg-dark text-light">
+                    {% if event.htmlLink %}
+                        <a href="{{ event.htmlLink }}" class="text-primary text-decoration-underline" target="_blank">{{ event.summary }}</a>
+                    {% else %}
+                        <span>{{ event.summary }}</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            
+            <div class="mb-3">
+                <form action="{{ url_for('send_email_summary') }}" method="POST" class="mb-2 d-flex flex-column align-items-center gap-2">
+                    <label for="email" class="form-label">Send a summary to your email:</label>
+                    <input type="email" name="email" id="email" required class="form-control w-auto" placeholder="you@email.com" />
+                    <button type="submit" class="btn btn-primary">Send Email</button>
+                    <span class="text-muted small mt-1">We only use your email to send this summary. <a href="/privacy" class="text-decoration-underline">Privacy Policy</a></span>
+                </form>
+                <form action="{{ url_for('download_ics') }}" method="POST" class="text-center">
+                    <button type="submit" class="btn btn-success">Download ICS for Apple/Outlook</button>
+                </form>
+                {% if email_sent %}
+                <div class="mt-2 alert alert-success p-2">Email sent successfully!</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('toggleEvents');
+        const eventsSection = document.getElementById('eventsSection');
+        const arrowIcon = document.getElementById('arrowIcon');
+
+        if (toggleBtn && eventsSection && arrowIcon) {
+            toggleBtn.addEventListener('click', () => {
+                const isHidden = eventsSection.classList.toggle('d-none');
+                arrowIcon.classList.toggle('bi-chevron-up', !isHidden);
+                arrowIcon.classList.toggle('bi-chevron-down', !isHidden);
+            });
+        }
+    });
+</script>
+
+{% if provider == 'apple' %}
+<script>
+    window.addEventListener('load', () => {
+        const downloadForm = document.querySelector('form[action="{{ url_for('download_ics') }}"]');
+        if (downloadForm) {
+            downloadForm.submit();
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}
