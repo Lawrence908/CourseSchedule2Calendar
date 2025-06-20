@@ -49,8 +49,8 @@ sudo mkdir -p /opt/schedshare/ssl
 # Generate self-signed certificate for development
 echo "🔐 Generating SSL certificate..."
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /opt/schedshare/ssl/key.pem \
-    -out /opt/schedshare/ssl/cert.pem \
+    -keyout /etc/letsencrypt/live/schedshare.chrislawrence.ca/fullchain.pem \
+    -out /etc/letsencrypt/live/schedshare.chrislawrence.ca/fullchain.pem \
     -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
 
 sudo chown -R $USER:$USER /opt/schedshare/ssl

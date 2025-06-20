@@ -73,4 +73,9 @@ logs/
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Allow static assets to be copied into the Docker image (re-include them)
+!static/**
+
+# Remove specific negations

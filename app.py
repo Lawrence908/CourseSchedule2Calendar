@@ -33,8 +33,17 @@ ALLOWED_EXTENSIONS = {'pdf'}
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
+
+# --- Redis / session configuration ---
 app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_REDIS'] = 'redis://localhost:6379/0'
+
+#      Use docker-compose service name "redis" unless overridden
+REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+
+# A Redis *instance* is required by Flask-Session, not just the URL string
+from redis import Redis as _Redis
+app.config['SESSION_REDIS'] = _Redis.from_url(REDIS_URL)
+
 Session(app)
 
 # Initialize calendar providers
@@ -43,8 +52,7 @@ CALENDAR_PROVIDERS = {
     for provider in [GoogleCalendarProvider(), AppleCalendarProvider()]
 }
 
-# Redis setup
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+# Redis setup (reuse same URL)
 redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # Global cache for uploaded course data (keyed by upload_id) - still in memory for now
