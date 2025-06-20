@@ -295,6 +295,7 @@ def oauth2callback():
                 session['pdf_filename'] = filename
                 session['provider'] = 'google'
                 
+                flash(f"Successfully created {len(created_events)} events.", "success")
                 logger.info(f"Successfully created {len(created_events)} Google Calendar events.")
                 return redirect(url_for('show_confirmation'))
 
@@ -365,6 +366,7 @@ def create_selected_events():
     elif provider == 'apple':
         # For Apple/Outlook, we now trigger a download and then show confirmation
         # The actual download will happen via a separate request from the confirm page
+        session['trigger_ics_download'] = True  # Set one-time download flag
         flash('Your ICS file is ready for download.')
         return redirect(url_for('show_confirmation'))
 
@@ -376,11 +378,11 @@ def create_selected_events():
 def show_confirmation():
     created_events = session.get('created_events', [])
     selected_courses = session.get('selected_courses', [])
-    courses = UPLOAD_CACHE.get(session.get('upload_id'), [])
     
     # For Apple/Outlook, we create a summary from selected_courses
     if not created_events and session.get('provider') == 'apple':
         created_events = [{'summary': f"{c['Course']} - {c['Section']}"} for c in selected_courses]
+        session['created_events'] = created_events  # Store for email summary
 
     if not created_events and not selected_courses:
         flash('No events were created or your session has expired.')
@@ -388,7 +390,7 @@ def show_confirmation():
 
     return render_template('confirm.html',
                            created_events=created_events,
-                           course_details=get_course_details_string(courses),
+                           courses_to_display=selected_courses,
                            filename=session.get('pdf_filename'),
                            email_sent=session.pop('email_sent', False),
                            provider=session.get('provider'))
@@ -415,6 +417,7 @@ def send_email_summary():
     created_events = session.get('created_events', [])
     
     if not email or not created_events:
+        logger.warning("Email sending failed. Email provided: %s. Events in session: %s", bool(email), bool(created_events))
         flash('Could not send email. Missing data.')
         return redirect(url_for('show_confirmation'))
 

@@ -21,8 +21,23 @@
                     <span class="text-light small">{{ filename }}</span>
                 </div>
             {% endif %}
-            <div class="mb-4 bg-secondary bg-opacity-25 rounded p-3">
-                <pre class="text-light small mb-0">{{ course_details }}</pre>
+            <div class="row g-3">
+                {% for course in courses_to_display %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 bg-secondary bg-opacity-25 text-light">
+                        <div class="card-body">
+                            <h3 class="h6 fw-bold text-primary mb-2">{{ course['Course'] }}</h3>
+                            <p class="mb-1"><strong>Section:</strong> {{ course['Section'] }}</p>
+                            <p class="mb-1"><strong>Instructor:</strong> {{ course['Instructor'] }}</p>
+                            <p class="mb-1"><strong>Location:</strong> {{ course['Location'] }}</p>
+                            <p class="mb-1"><strong>Days:</strong> {{ course['Days'] }}</p>
+                            <p class="mb-1"><strong>Time:</strong> {{ course['Start'] }} - {{ course['End'] }}</p>
+                            <p class="mb-1"><strong>Start:</strong> {{ course['StartDate'] }} | <strong>End:</strong> {{ course['EndDate'] }}</p>
+                            <p class="text-muted small mb-0">Status: {{ course['Status'] }} | Mode: {{ course['DeliveryMode'] }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
         
@@ -74,7 +89,7 @@
     });
 </script>
 
-{% if provider == 'apple' %}
+{% if session.pop('trigger_ics_download', None) %}
 <script>
     window.addEventListener('load', () => {
         const downloadForm = document.querySelector('form[action="{{ url_for('download_ics') }}"]');
