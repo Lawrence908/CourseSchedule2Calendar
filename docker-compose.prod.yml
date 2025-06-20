@@ -47,6 +47,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./static:/app/static:ro
     depends_on:
       - app
     restart: unless-stopped
