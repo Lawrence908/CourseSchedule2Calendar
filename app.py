@@ -15,7 +15,6 @@ from flask_session import Session
 import redis
 import json
 from flask_mail import Mail, Message
-from ics import Calendar, Event
 from datetime import datetime, timezone
 from icalendar import Calendar as ICalendar
 from icalendar import Event as ICalendarEvent
@@ -500,44 +499,6 @@ def _ics_until_date(date_str, semester):
     year = int('20' + semester[1:3])
     dt = datetime.strptime(date_str, '%d-%b').replace(year=year)
     return dt.strftime('%Y%m%dT000000Z')
-
-# Route: ICS direct download from select-provider
-@app.route('/ics-direct', methods=['POST'])
-def ics_direct():
-    courses = []
-    upload_id = session.get('upload_id')
-    if upload_id:
-        courses = UPLOAD_CACHE.get(upload_id, [])
-    if not courses:
-        # Try session fallback
-        courses = session.get('display_courses', [])
-    filename = session.get('pdf_filename', 'CourseSchedule.ics')
-    if not courses:
-        flash('No courses to export.')
-        return redirect(url_for('index'))
-    cal = Calendar()
-    for c in courses:
-        e = Event()
-        e.name = f"{c['Course']} ({c['Section']})"
-        e.begin = _ics_start_datetime(c)
-        e.end = _ics_end_datetime(c)
-        e.location = c['Location']
-        e.description = f"Instructor: {c['Instructor']}, Status: {c['Status']}, Mode: {c['DeliveryMode']}"
-        # Add RRULE for recurrence
-        days_mapping = {"Mo": "MO", "Tu": "TU", "We": "WE", "Th": "TH", "Fr": "FR", "Sa": "SA", "Su": "SU"}
-        days = ','.join([days_mapping.get(day, '') for day in c['Days'].split() if day in days_mapping])
-        semester = c['Section'][:3]
-        until_date = _ics_until_date(c['EndDate'], semester)
-        if days:
-            logger.info(f"Adding RRULE for course: {c['Course']} with days: {days} and until date: {until_date}")
-            e.rrule = f"FREQ=WEEKLY;BYDAY={days};UNTIL={until_date}"
-        # Add DTSTAMP for RFC compliance
-        e.created = datetime.now(timezone.utc)
-        cal.events.add(e)
-
-    return Response(cal.serialize(), mimetype='text/calendar', headers={
-        'Content-Disposition': f'attachment; filename="{filename.replace('.pdf', '.ics').replace('.PDF', '.ics')}"'
-    })
 
 # Privacy route
 @app.route('/privacy')
