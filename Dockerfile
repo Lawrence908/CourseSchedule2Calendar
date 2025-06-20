@@ -18,6 +18,7 @@ RUN apt-get update \
         libffi-dev \
         libssl-dev \
         redis-server \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
