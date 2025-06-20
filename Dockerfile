@@ -45,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
 # Default command (can be overridden by Procfile)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"] 
+CMD ["sh", "-c", "gunicorn --bind :${PORT:-8080} --workers 1 --threads 8 --timeout 0 app:app"] 
