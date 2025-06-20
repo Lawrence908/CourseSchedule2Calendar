@@ -549,4 +549,6 @@ def home():
     return render_template('home.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # This block is for local development.
+    # For production, a Gunicorn server is used as the entrypoint.
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))

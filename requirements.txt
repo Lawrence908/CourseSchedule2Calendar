@@ -12,3 +12,4 @@ Flask-Session
 Flask-Mail
 PyJWT
 icalendar
+gunicorn
