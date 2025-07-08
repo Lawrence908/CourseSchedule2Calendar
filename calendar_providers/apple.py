@@ -16,7 +16,7 @@ class AppleCalendarProvider(CalendarProvider):
         self.team_id = os.getenv('APPLE_TEAM_ID')
         self.key_id = os.getenv('APPLE_KEY_ID')
         self.private_key_path = os.getenv('APPLE_PRIVATE_KEY_PATH')
-        self.redirect_uri = os.getenv('APPLE_REDIRECT_URI', 'http://localhost:5000/oauth2callback')
+        self.redirect_uri = os.getenv('APPLE_REDIRECT_URI', 'https://schedshare.chrislawrence.ca/oauth2callback')
         
         if not all([self.client_id, self.team_id, self.key_id, self.private_key_path]):
             logger.warning("Missing required Apple OAuth configuration")
@@ -25,7 +25,7 @@ class AppleCalendarProvider(CalendarProvider):
         """Get the Apple OAuth URL."""
         # Since we're not using Apple OAuth anymore, we'll just return a dummy URL
         # that will redirect to the event selection page
-        return "http://localhost:5000/events", "dummy_state", None
+        return "https://schedshare.chrislawrence.ca/events", "dummy_state", None
     
     def handle_callback(self, auth_response: str, flow: Any) -> Any:
         """Handle the OAuth callback and return the service."""

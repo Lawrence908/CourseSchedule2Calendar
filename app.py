@@ -67,7 +67,7 @@ def redis_set_json(key, value, ex=None):
 
 def redis_get_json(key):
     val = redis_client.get(key)
-    if val:
+    if isinstance(val, (str, bytes, bytearray)) and val:
         return json.loads(val)
     return None
 
@@ -142,6 +142,10 @@ def upload_file():
             logger.info("No file selected. Redirecting to index.")
             return redirect(url_for('index'))
         if file and allowed_file(file.filename):
+            if file.filename is None:
+                flash('No selected file')
+                logger.info("No file selected. Redirecting to index.")
+                return redirect(url_for('index'))
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
@@ -464,7 +468,15 @@ def download_ics():
         try:
             e = ICalendarEvent()
             e.add('summary', f"{c.get('Course', 'N/A')} ({c.get('Section', 'N/A')})")
-            e.add('location', c.get('Location', 'N/A'))
+            # Set location to full campus address
+            loc = c.get('Location', 'N/A')
+            if 'Nanaimo' in loc:
+                location = "Vancouver Island University, 900 Fifth St, Nanaimo, BC V9R 5S5, Canada"
+            elif 'Cowichan' in loc:
+                location = "Vancouver Island University, Cowichan Campus, 2011 University Way, North Cowichan, BC V9L 0C7, Canada"
+            else:
+                location = loc
+            e.add('location', location)
             e.add('description', f"Instructor: {c.get('Instructor', 'N/A')}, Status: {c.get('Status', 'N/A')}, Mode: {c.get('DeliveryMode', 'N/A')}")
             
             start_dt = _ics_start_datetime(c)

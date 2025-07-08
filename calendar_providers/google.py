@@ -66,7 +66,13 @@ class GoogleCalendarProvider(CalendarProvider):
         start_datetime = self.convert_to_datetime(course['StartDate'], course['Start'], semester, course['Days'])
         end_datetime = self.convert_to_datetime(course['StartDate'], course['End'], semester, course['Days'])
         summary = f"{course['Course']} - B{building} R{room}"
-        location = course['Location']
+        # Set location to full campus address
+        if 'Nanaimo' in course['Location']:
+            location = "Vancouver Island University, 900 Fifth St, Nanaimo, BC V9R 5S5, Canada"
+        elif 'Cowichan' in course['Location']:
+            location = "Vancouver Island University, Cowichan Campus, 2011 University Way, North Cowichan, BC V9L 0C7, Canada"
+        else:
+            location = course['Location']
         event = {
             'summary': summary,
             'location': location,
