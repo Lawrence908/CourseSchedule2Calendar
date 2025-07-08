@@ -34,6 +34,9 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
 
+# Force HTTPS for URL generation
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
 # --- Redis / session configuration ---
 app.config['SESSION_TYPE'] = 'redis'
 
@@ -278,14 +281,16 @@ def oauth2callback():
         if provider == 'google':
             try:
                 from google_auth_oauthlib.flow import Flow
+                redirect_uri = os.getenv('GOOGLE_REDIRECT_URI', 'https://schedshare.chrislawrence.ca/oauth2callback')
+                logger.info(f"[OAuth2Callback] Using redirect_uri for token exchange: {redirect_uri}")
                 flow = Flow.from_client_secrets_file(
                     'credentials.json',
                     scopes=GoogleCalendarProvider.SCOPES,
-                    redirect_uri='http://localhost:5000/oauth2callback'
+                    redirect_uri=redirect_uri
                 )
                 if code_verifier:
                     flow.code_verifier = code_verifier
-                
+                logger.info(f"[OAuth2Callback] Flow redirect_uri: {flow.redirect_uri}")
                 service = provider_instance.handle_callback(auth_response, flow)
                 
                 created_events = []

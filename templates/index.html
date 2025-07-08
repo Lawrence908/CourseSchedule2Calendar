@@ -97,7 +97,9 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Upload and Process</button>
                 <p class="text-muted small mt-2">By clicking "Upload and Process", you agree to our <a href="/privacy" class="text-primary">Privacy Policy</a>.</p>
-                <button type="button" class="btn btn-outline-primary" onclick="window.open('{{ url_for('static', filename='DemoCourseSchedule.PDF') }}', '_blank')">Download a Sample PDF to try it out</button>
+                <a href="{{ url_for('static', filename='DemoCourseSchedule.PDF') }}" download class="btn btn-outline-primary">
+                    Download a Sample PDF to try it out
+                </a>
             </form>
         </div>
     </div>

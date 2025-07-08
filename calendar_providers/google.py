@@ -3,6 +3,10 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 from .base import CalendarProvider
 import logging
+import os
+import dotenv
+
+dotenv.load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -13,11 +17,17 @@ class GoogleCalendarProvider(CalendarProvider):
     
     def get_auth_url(self) -> Tuple[str, str, Any]:
         """Get the Google OAuth URL."""
+        redirect_uri = os.getenv('GOOGLE_REDIRECT_URI', 'https://schedshare.chrislawrence.ca/oauth2callback')
+        if redirect_uri.startswith('http://'):
+            # Force HTTPS if not already
+            redirect_uri = redirect_uri.replace('http://', 'https://', 1)
+        print(f"[GoogleCalendarProvider] Using redirect_uri for auth: {redirect_uri}")
         flow = Flow.from_client_secrets_file(
             'credentials.json',
             scopes=self.SCOPES,
-            redirect_uri='http://localhost:5000/oauth2callback'
+            redirect_uri=redirect_uri
         )
+        print(f"[GoogleCalendarProvider] Flow redirect_uri: {flow.redirect_uri}")
         auth_url, state = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true'
@@ -26,6 +36,7 @@ class GoogleCalendarProvider(CalendarProvider):
     
     def handle_callback(self, auth_response: str, flow: Any) -> Any:
         """Handle the OAuth callback and return the service."""
+        print(f"[GoogleCalendarProvider] handle_callback flow.redirect_uri: {flow.redirect_uri}")
         flow.fetch_token(authorization_response=auth_response)
         return build('calendar', 'v3', credentials=flow.credentials)
     
