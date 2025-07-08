@@ -9,57 +9,238 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
             color: #333;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         }
         .container {
             max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            position: relative;
         }
-        h1 {
-            color: #333;
-            font-size: 24px;
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.3));
+        }
+        .header h1 {
+            color: white;
+            font-size: 28px;
+            margin: 0 0 0.5rem 0;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 2rem;
+        }
+        .intro {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 4px solid #3b82f6;
+        }
+        .intro p {
+            margin: 0;
+            color: #475569;
+            font-size: 16px;
         }
         ul {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
         li {
-            background-color: #f8f9fa;
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 4px;
-            border-left: 5px solid #0d6efd;
+            background: #ffffff;
+            margin-bottom: 12px;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #10b981;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
         }
-        a {
-            color: #0d6efd;
+        li:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        li:last-child {
+            margin-bottom: 0;
+        }
+        .event-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 18px;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .event-icon {
+            color: #3b82f6;
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        .event-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            border: 1px solid #dbeafe;
+            transition: all 0.3s ease;
+        }
+        .event-link:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
             text-decoration: none;
         }
+        .link-icon {
+            margin-left: 6px;
+            font-size: 14px;
+        }
         .footer {
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #777;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 2rem;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .footer-icon {
+            color: #3b82f6;
+            margin-right: 6px;
+        }
+        .footer strong {
+            color: #1e293b;
+        }
+        
+        /* Dark mode support for email clients that support it */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            }
+            .container {
+                background: #1e293b;
+                border-color: #334155;
+            }
+            .intro {
+                background: #334155;
+                border-color: #475569;
+                color: #e2e8f0;
+            }
+            .intro p {
+                color: #cbd5e1;
+            }
+            li {
+                background: #334155;
+                border-color: #475569;
+            }
+            .event-title {
+                color: #f1f5f9;
+            }
+            .event-link {
+                background: rgba(59, 130, 246, 0.1);
+                border-color: rgba(59, 130, 246, 0.3);
+                color: #60a5fa;
+            }
+            .footer {
+                background: #334155;
+                border-color: #475569;
+                color: #94a3b8;
+            }
+            .footer strong {
+                color: #f1f5f9;
+            }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                border-radius: 12px;
+            }
+            .header {
+                padding: 1.5rem 1rem;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .content {
+                padding: 1.5rem 1rem;
+            }
+            li {
+                padding: 16px;
+            }
+            .event-title {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Automated Schedule Integration Complete</h1>
-        <p>The schedule parsing algorithm has processed your document. The following events have been programmatically generated for your calendar:</p>
-        <ul>
-            {% for event in events %}
-                <li>
-                    <strong>{{ event.summary }}</strong>
-                    {% if event.htmlLink %}
-                        <br>
-                        <a href="{{ event.htmlLink }}" target="_blank">View on Google Calendar</a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+        <div class="header">
+            <h1>Schedule Integration Complete</h1>
+            <p>Your course events have been successfully processed</p>
+        </div>
+        
+        <div class="content">
+            <div class="intro">
+                <p>Great news! The schedule parsing algorithm has successfully processed your document and generated the following calendar events for you:</p>
+            </div>
+            
+            <ul>
+                {% for event in events %}
+                    <li>
+                        <div class="event-title">
+                            {{ event.summary }}
+                        </div>
+                        {% if event.htmlLink %}
+                            <a href="{{ event.htmlLink }}" class="event-link" target="_blank">
+                                View in Google Calendar
+                                <span class="link-icon">↗</span>
+                            </a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
         <div class="footer">
-            <p>This automated email was sent from the SchedShare application, a project demonstrating PDF data extraction and API integration capabilities. Your email address has not been stored.</p>
+            <p>
+                This automated email was sent from the <strong>SchedShare</strong> application, demonstrating advanced PDF data extraction and calendar API integration capabilities.
+            </p>
+            <p style="margin-top: 1rem;">
+                Your email address has <strong>not been stored</strong> and your privacy is protected.
+            </p>
         </div>
     </div>
 </body>

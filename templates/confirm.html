@@ -3,37 +3,240 @@
 {% block title %}Your Events - SchedShare{% endblock %}
 
 {% block content %}
-<div class="card shadow">
+<style>
+    /* Confirmation Page Enhancements */
+    .confirmation-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        box-shadow: var(--shadow-3d);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .confirmation-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+    }
+
+    /* Course Card Enhancements */
+    .course-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .course-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .course-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg), 0 0 16px rgba(59, 130, 246, 0.2);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .course-card:hover::before {
+        opacity: 1;
+    }
+
+    .course-title {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+    }
+
+    /* Created Events Section */
+    .created-events-container {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: var(--shadow-sm);
+        margin-top: 2rem;
+    }
+
+    .event-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 0.75rem;
+        transition: all var(--transition-fast);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .event-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--accent-secondary);
+    }
+
+    .event-item:hover {
+        transform: translateX(8px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .event-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Action Section Enhancement */
+    .action-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+    }
+
+    .action-section .form-control {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    /* File Info Enhancement */
+    .file-display {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .file-display img {
+        margin-right: 0.75rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    /* Toggle Button Enhancement */
+    #toggleEvents {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all var(--transition-fast);
+    }
+
+    #toggleEvents:hover {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border-color: var(--accent-primary);
+        transform: translateY(-2px);
+    }
+
+    /* Success Indicators */
+    .success-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid var(--accent-secondary);
+        color: var(--accent-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    /* Privacy Notice Enhancement */
+    .privacy-notice {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-top: 1rem;
+    }
+
+    .privacy-notice a {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .privacy-notice a:hover {
+        color: var(--accent-secondary);
+    }
+
+    /* Auto-download Script Enhancement */
+    .download-trigger {
+        display: none;
+    }
+</style>
+
+<div class="confirmation-container">
     <div class="card-body">
         {# Flashed messages are handled by the base template #}
 
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h5 fw-bold text-light">Identified Events</h2>
-            <button id="toggleEvents" class="btn btn-sm btn-outline-light" type="button">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h2 class="h4 fw-bold text-light mb-2">Event Creation Complete</h2>
+                <div class="success-badge">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Successfully processed your schedule
+                </div>
+            </div>
+            <button id="toggleEvents" class="btn btn-sm" type="button">
                 <span id="arrowIcon" class="bi bi-chevron-up"></span>
+                <span class="ms-1">Hide Details</span>
             </button>
         </div>
 
         <div id="eventsSection" class="d-none">
             {% if filename %}
-                <div class="d-flex align-items-center mb-2">
-                    <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;" class="me-2">
-                    <span class="text-light small">{{ filename }}</span>
+                <div class="file-display">
+                    <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;">
+                    <span class="text-light fw-medium">{{ filename }}</span>
                 </div>
             {% endif %}
+            
             <div class="row g-3">
                 {% for course in courses_to_display %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 bg-secondary bg-opacity-25 text-light">
+                <div class="col-md-6 col-xl-4">
+                    <div class="course-card">
                         <div class="card-body">
-                            <h3 class="h6 fw-bold text-primary mb-2">{{ course['Course'] }}</h3>
-                            <p class="mb-1"><strong>Section:</strong> {{ course['Section'] }}</p>
-                            <p class="mb-1"><strong>Instructor:</strong> {{ course['Instructor'] }}</p>
-                            <p class="mb-1"><strong>Location:</strong> {{ course['Location'] }}</p>
-                            <p class="mb-1"><strong>Days:</strong> {{ course['Days'] }}</p>
-                            <p class="mb-1"><strong>Time:</strong> {{ course['Start'] }} - {{ course['End'] }}</p>
-                            <p class="mb-1"><strong>Start:</strong> {{ course['StartDate'] }} | <strong>End:</strong> {{ course['EndDate'] }}</p>
-                            <p class="text-muted small mb-0">Status: {{ course['Status'] }} | Mode: {{ course['DeliveryMode'] }}</p>
+                            <h3 class="h6 course-title mb-3">{{ course['Course'] }}</h3>
+                            <div class="course-details">
+                                <p class="mb-2 text-light"><strong>Section:</strong> <span class="text-secondary">{{ course['Section'] }}</span></p>
+                                <p class="mb-2 text-light"><strong>Instructor:</strong> <span class="text-secondary">{{ course['Instructor'] }}</span></p>
+                                <p class="mb-2 text-light"><strong>Location:</strong> <span class="text-secondary">{{ course['Location'] }}</span></p>
+                                <p class="mb-2 text-light"><strong>Days:</strong> <span class="text-secondary">{{ course['Days'] }}</span></p>
+                                <p class="mb-2 text-light"><strong>Time:</strong> <span class="text-secondary">{{ course['Start'] }} - {{ course['End'] }}</span></p>
+                                <p class="mb-2 text-light"><strong>Duration:</strong> <span class="text-secondary">{{ course['StartDate'] }} to {{ course['EndDate'] }}</span></p>
+                                <p class="text-muted small mb-0">{{ course['Status'] }} • {{ course['DeliveryMode'] }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -41,34 +244,76 @@
             </div>
         </div>
         
-        <div class="mt-4">
-            <h3 class="h6 fw-bold text-success mb-2">Created Events</h3>
-            <ul class="list-group mb-4">
+        <div class="created-events-container">
+            <h3 class="h5 fw-bold text-success mb-3">
+                <i class="bi bi-calendar-check-fill me-2"></i>
+                Created Events ({{ created_events|length }})
+            </h3>
+            <div class="mb-4">
                 {% for event in created_events %}
-                <li class="list-group-item bg-dark text-light">
+                <div class="event-item">
                     {% if event.htmlLink %}
-                        <a href="{{ event.htmlLink }}" class="text-primary text-decoration-underline" target="_blank">{{ event.summary }}</a>
+                        <a href="{{ event.htmlLink }}" class="text-primary text-decoration-none fw-medium" target="_blank">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            {{ event.summary }}
+                            <i class="bi bi-box-arrow-up-right ms-2 small"></i>
+                        </a>
                     {% else %}
-                        <span>{{ event.summary }}</span>
+                        <div class="text-light fw-medium">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            {{ event.summary }}
+                        </div>
                     {% endif %}
-                </li>
+                </div>
                 {% endfor %}
-            </ul>
-            
-            <div class="mb-3">
-                <form action="{{ url_for('send_email_summary') }}" method="POST" class="mb-2 d-flex flex-column align-items-center gap-2">
-                    <label for="email" class="form-label">Send a summary to your email:</label>
-                    <input type="email" name="email" id="email" required class="form-control w-auto" placeholder="you@email.com" />
-                    <button type="submit" class="btn btn-primary">Send Email</button>
-                    <span class="text-muted small mt-1">We only use your email to send this summary. <a href="/privacy" class="text-decoration-underline">Privacy Policy</a></span>
-                </form>
-                <form action="{{ url_for('download_ics') }}" method="POST" class="text-center">
-                    <button type="submit" class="btn btn-success">Download ICS for Apple/Outlook</button>
-                </form>
-                {% if email_sent %}
-                <div class="mt-2 alert alert-success p-2">Email sent successfully!</div>
-                {% endif %}
             </div>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="action-section">
+                        <form action="{{ url_for('send_email_summary') }}" method="POST">
+                            <h4 class="h6 fw-bold text-light mb-3">
+                                <i class="bi bi-envelope me-2"></i>
+                                Email Summary
+                            </h4>
+                            <div class="mb-3">
+                                <input type="email" name="email" id="email" required class="form-control" placeholder="you@email.com" />
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-2"></i>
+                                Send Summary
+                            </button>
+                            <div class="privacy-notice">
+                                <i class="bi bi-shield-check me-1"></i>
+                                We only use your email for this summary. 
+                                <a href="/privacy">Privacy Policy</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="action-section">
+                        <form action="{{ url_for('download_ics') }}" method="POST">
+                            <h4 class="h6 fw-bold text-light mb-3">
+                                <i class="bi bi-download me-2"></i>
+                                Download Calendar
+                            </h4>
+                            <p class="text-secondary small mb-3">Get an .ICS file for Apple Calendar, Outlook, or other calendar apps</p>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-file-earmark-arrow-down me-2"></i>
+                                Download ICS
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            {% if email_sent %}
+            <div class="mt-3 alert alert-success">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Email sent successfully!
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -83,7 +328,13 @@
             toggleBtn.addEventListener('click', () => {
                 const isHidden = eventsSection.classList.toggle('d-none');
                 arrowIcon.classList.toggle('bi-chevron-up', !isHidden);
-                arrowIcon.classList.toggle('bi-chevron-down', !isHidden);
+                arrowIcon.classList.toggle('bi-chevron-down', isHidden);
+                
+                // Update button text
+                const btnSpan = toggleBtn.querySelector('span:last-child');
+                if (btnSpan) {
+                    btnSpan.textContent = isHidden ? 'Show Details' : 'Hide Details';
+                }
             });
         }
     });
