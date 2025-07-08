@@ -284,6 +284,50 @@
         .bg-secondary {
             background-color: var(--bg-tertiary) !important;
         }
+
+        /* Feedback Widget (for testing phases) */
+        .feedback-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            transition: all var(--transition-normal);
+            display: none; /* Enable during testing */
+        }
+
+        .feedback-widget.enabled {
+            display: block;
+        }
+
+        .feedback-btn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-fast);
+        }
+
+        .feedback-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md), 0 0 16px rgba(59, 130, 246, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .feedback-widget {
+                bottom: 10px;
+                right: 10px;
+            }
+        }
     </style>
 </head>
 <body class="min-vh-100 d-flex flex-column">
@@ -311,6 +355,15 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </main>
+    
+    <!-- Feedback Widget (enable during testing) -->
+    <div class="feedback-widget" id="feedbackWidget">
+        <button class="feedback-btn" onclick="openFeedback()">
+            <i class="bi bi-chat-dots"></i>
+            <span>Beta Feedback</span>
+        </button>
+    </div>
+
     {% block footer %}
     <footer class="mt-auto py-4 text-center text-light">
         <div class="container">
@@ -318,12 +371,34 @@
                 &copy; {{ year or 2025 }} SchedShare &middot;
                 <a href="mailto:chris@chrislawrence.com" class="text-decoration-none">Contact</a> &middot;
                 <a href="https://github.com/lawrence908/CourseSchedule2Calendar" target="_blank" class="text-decoration-none">GitHub</a> &middot;
-                <a href="/privacy" class="text-decoration-none">Privacy</a>
+                <a href="/privacy" class="text-decoration-none">Privacy</a> &middot;
+                <a href="/terms" class="text-decoration-none">Terms</a>
             </div>
         </div>
     </footer>
     {% endblock %}
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Feedback Widget Script -->
+    <script>
+        // Enable feedback widget during testing phases
+        function enableFeedbackWidget() {
+            const widget = document.getElementById('feedbackWidget');
+            if (widget) {
+                widget.classList.add('enabled');
+            }
+        }
+
+        // Open feedback form (customize URL for your preferred feedback platform)
+        function openFeedback() {
+            // Replace with your feedback form URL (Google Forms, Typeform, etc.)
+            const feedbackUrl = 'https://forms.google.com/your-feedback-form-id';
+            window.open(feedbackUrl, '_blank', 'width=600,height=800');
+        }
+
+        // Uncomment the line below during beta testing to enable feedback widget
+        // enableFeedbackWidget();
+    </script>
 </body>
 </html> 

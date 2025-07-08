@@ -530,6 +530,10 @@ def _ics_until_date(date_str, semester):
 def privacy():
     return render_template('privacy.html')
 
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
 @app.route('/home')
 def home():
     return render_template('home.html')

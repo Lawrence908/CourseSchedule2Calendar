@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service - SchedShare{% endblock %}
+{% block content %}
+<style>
+    /* Terms Page Enhancements (matching privacy.html) */
+    .terms-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        box-shadow: var(--shadow-3d);
+        position: relative;
+        overflow: hidden;
+        max-width: 55rem;
+        margin: 0 auto;
+    }
+
+    .terms-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    .terms-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-top: 1rem;
+    }
+
+    .terms-title {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+    }
+
+    .terms-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.125rem;
+        margin-top: 1rem;
+    }
+
+    /* Section Headers */
+    .section-header {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 600;
+        font-size: 1.25rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-icon {
+        color: var(--accent-primary);
+        margin-right: 0.75rem;
+        font-size: 1.25rem;
+    }
+
+    /* Terms List Enhancement */
+    .terms-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .terms-item {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1rem;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .terms-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    .terms-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .terms-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Contact Link Enhancement */
+    .contact-link {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        transition: all var(--transition-fast);
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .contact-link:hover {
+        color: var(--accent-secondary);
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Footer Note Enhancement */
+    .footer-note {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-top: 2rem;
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    /* Emphasis Text */
+    .terms-item strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    /* Text Content */
+    .terms-text {
+        color: var(--text-light);
+        line-height: 1.6;
+    }
+
+    .terms-text p {
+        margin-bottom: 1rem;
+    }
+
+    .terms-text p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .terms-container {
+            border-radius: 16px;
+            margin: 1rem;
+        }
+        
+        .terms-item {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .section-header {
+            font-size: 1.125rem;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="terms-container">
+        <div class="card-body p-5">
+            <div class="terms-header">
+                <h1 class="h2 terms-title mb-2">Terms of Service</h1>
+                <p class="terms-subtitle">Please read these terms carefully before using SchedShare.</p>
+            </div>
+            
+            <div class="terms-content">
+                <h2 class="section-header">
+                    <i class="bi bi-info-circle section-icon"></i>
+                    Service Description
+                </h2>
+                <div class="terms-item">
+                    <div class="terms-text">
+                        <p>SchedShare is a free educational tool that helps students convert their VIU course schedule PDFs into calendar events. The service automatically parses course information and creates calendar entries for Google Calendar or downloadable ICS files compatible with Apple Calendar, Outlook, and other calendar applications.</p>
+                    </div>
+                </div>
+
+                <h2 class="section-header">
+                    <i class="bi bi-person-check section-icon"></i>
+                    User Responsibilities
+                </h2>
+                <ul class="terms-list">
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Accurate Information:</strong> You are responsible for ensuring the course schedule PDF you upload contains accurate information. SchedShare automatically parses the document and cannot verify the correctness of course details.
+                        </div>
+                    </li>
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Appropriate Use:</strong> This service is intended for legitimate educational purposes. You may only upload your own course schedules from VIU and must not attempt to upload inappropriate, malicious, or non-schedule documents.
+                        </div>
+                    </li>
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Account Security:</strong> When connecting to Google Calendar, you are responsible for maintaining the security of your Google account credentials.
+                        </div>
+                    </li>
+                </ul>
+
+                <h2 class="section-header">
+                    <i class="bi bi-shield-check section-icon"></i>
+                    Service Availability & Limitations
+                </h2>
+                <ul class="terms-list">
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Best Effort Service:</strong> SchedShare is provided "as is" without warranties. While we strive for accuracy, the automated parsing may not capture all course details perfectly. Always verify your calendar events after creation.
+                        </div>
+                    </li>
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Service Availability:</strong> We aim to provide reliable service but cannot guarantee 100% uptime. The service may be temporarily unavailable for maintenance or due to technical issues.
+                        </div>
+                    </li>
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>PDF Format Support:</strong> The service is optimized for VIU course schedule PDFs. Other document formats or schedules from different institutions may not parse correctly.
+                        </div>
+                    </li>
+                </ul>
+
+                <h2 class="section-header">
+                    <i class="bi bi-calendar-event section-icon"></i>
+                    Calendar Integration
+                </h2>
+                <ul class="terms-list">
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Google Calendar Access:</strong> By choosing Google Calendar integration, you grant SchedShare temporary permission to create events in your calendar. This access is used only to add your course events and is not stored.
+                        </div>
+                    </li>
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Event Management:</strong> Created calendar events become part of your personal calendar. You can modify or delete them as needed. SchedShare does not retain access to modify events after creation.
+                        </div>
+                    </li>
+                </ul>
+
+                <h2 class="section-header">
+                    <i class="bi bi-copyright section-icon"></i>
+                    Intellectual Property
+                </h2>
+                <div class="terms-item">
+                    <div class="terms-text">
+                        <p>The SchedShare application, including its design, code, and algorithms, is the intellectual property of its creators. The course schedule information you upload remains your property, and we claim no ownership over your academic data.</p>
+                    </div>
+                </div>
+
+                <h2 class="section-header">
+                    <i class="bi bi-exclamation-triangle section-icon"></i>
+                    Limitation of Liability
+                </h2>
+                <ul class="terms-list">
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Educational Tool:</strong> SchedShare is provided as a convenience tool for students. We are not liable for missed classes, scheduling conflicts, or academic consequences resulting from inaccurate calendar events.
+                        </div>
+                    </li>
+                    <li class="terms-item">
+                        <div class="terms-text">
+                            <strong>Data Loss:</strong> While we implement reasonable safeguards, we cannot guarantee against data loss or service interruptions. Always maintain backup copies of important information.
+                        </div>
+                    </li>
+                </ul>
+
+                <h2 class="section-header">
+                    <i class="bi bi-x-circle section-icon"></i>
+                    Termination
+                </h2>
+                <div class="terms-item">
+                    <div class="terms-text">
+                        <p>We reserve the right to discontinue the service or restrict access for users who violate these terms. You may stop using the service at any time. Upon termination, any uploaded data is immediately deleted as outlined in our Privacy Policy.</p>
+                    </div>
+                </div>
+
+                <h2 class="section-header">
+                    <i class="bi bi-arrow-clockwise section-icon"></i>
+                    Changes to Terms
+                </h2>
+                <div class="terms-item">
+                    <div class="terms-text">
+                        <p>We may update these terms occasionally to reflect service improvements or legal requirements. Continued use of the service after changes constitutes acceptance of the updated terms.</p>
+                    </div>
+                </div>
+
+                <h2 class="section-header">
+                    <i class="bi bi-envelope section-icon"></i>
+                    Contact Information
+                </h2>
+                <div class="terms-item">
+                    <div class="terms-text">
+                        <p>For questions about these terms or the service, please contact us at 
+                            <a href="mailto:chris@chrislawrence.com" class="contact-link">
+                                <i class="bi bi-envelope-fill me-1"></i>
+                                chris@chrislawrence.com
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-note">
+                <i class="bi bi-calendar-event me-1"></i>
+                These terms are effective as of <strong>June 16, 2025</strong> and were last updated on this date.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
