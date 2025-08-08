@@ -15,7 +15,7 @@ from flask_session import Session
 import redis
 import json
 from flask_mail import Mail, Message
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from icalendar import Calendar as ICalendar
 from icalendar import Event as ICalendarEvent
 from datetime import datetime
@@ -60,6 +60,58 @@ redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # Global cache for uploaded course data (keyed by upload_id) - still in memory for now
 UPLOAD_CACHE = {}
+
+# Analytics tracking functions
+def track_event(event_type, data=None):
+    """Track analytics events in Redis with timestamps"""
+    timestamp = datetime.now().isoformat()
+    event_data = {
+        'type': event_type,
+        'timestamp': timestamp,
+        'data': data or {}
+    }
+    
+    # Store individual event
+    event_id = f"analytics:event:{secrets.token_urlsafe(8)}"
+    redis_client.setex(event_id, 86400 * 30, json.dumps(event_data))  # 30 days TTL
+    
+    # Update counters
+    today = datetime.now().strftime('%Y-%m-%d')
+    redis_client.hincrby(f"analytics:daily:{today}", event_type, 1)
+    redis_client.hincrby("analytics:total", event_type, 1)
+    
+    # Track unique sessions (if session_id available)
+    if 'session_id' in session:
+        session_key = f"analytics:session:{session['session_id']}"
+        redis_client.sadd(session_key, event_type)
+        redis_client.expire(session_key, 86400 * 7)  # 7 days TTL
+
+def get_analytics_summary():
+    """Get analytics summary for dashboard"""
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Get today's stats
+    today_stats = redis_client.hgetall(f"analytics:daily:{today}")
+    
+    # Get total stats
+    total_stats = redis_client.hgetall("analytics:total")
+    
+    # Get recent activity (last 7 days)
+    recent_activity = []
+    for i in range(7):
+        date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
+        day_stats = redis_client.hgetall(f"analytics:daily:{date}")
+        if day_stats:
+            recent_activity.append({
+                'date': date,
+                'stats': day_stats
+            })
+    
+    return {
+        'today': today_stats,
+        'total': total_stats,
+        'recent': recent_activity
+    }
 
 # Redis-backed cache helpers for OAUTH_FLOW_CACHE and EVENT_SERVICE_CACHE
 def redis_set_json(key, value, ex=None):
@@ -160,6 +212,14 @@ def upload_file():
             UPLOAD_CACHE[upload_id] = courses
             session['upload_id'] = upload_id
             session['pdf_filename'] = filename
+            
+            # Track successful PDF upload
+            track_event('pdf_uploaded', {
+                'filename': filename,
+                'courses_found': len(courses),
+                'upload_id': upload_id
+            })
+            
             logger.info('PDF uploaded and parsed: %s, found %d courses', filename, len(courses))
             return redirect(url_for('show_events'))
         flash('Invalid file type. Please upload a PDF.')
@@ -311,6 +371,22 @@ def oauth2callback():
                 session['pdf_filename'] = filename
                 session['provider'] = 'google'
                 
+                # Track successful Google Calendar event creation
+                track_event('google_events_created', {
+                    'events_created': len(created_events),
+                    'courses_selected': len(selected_courses),
+                    'provider': 'google'
+                })
+                
+                # Track for advanced analytics (if available)
+                try:
+                    from advanced_analytics import analytics
+                    upload_id = session.get('upload_id', 'unknown')
+                    analytics.mark_events_created(upload_id, 'google')
+                except ImportError:
+                    # Advanced analytics not available
+                    pass
+                
                 flash(f"Successfully created {len(created_events)} events.", "success")
                 logger.info(f"Successfully created {len(created_events)} Google Calendar events.")
                 return redirect(url_for('show_confirmation'))
@@ -362,6 +438,22 @@ def create_selected_events():
     
     provider = request.form.get('provider')
     session['provider'] = provider
+
+    # Track event creation attempt
+    track_event('events_selected', {
+        'provider': provider,
+        'courses_selected': len(selected_courses),
+        'total_courses_available': len(courses)
+    })
+    
+    # Track for advanced analytics (if available)
+    try:
+        from advanced_analytics import analytics
+        upload_id = session.get('upload_id', 'unknown')
+        analytics.track_course_selection(selected_courses, provider, upload_id)
+    except ImportError:
+        # Advanced analytics not available
+        pass
 
     if provider == 'google':
         provider_instance = CALENDAR_PROVIDERS.get(provider)
@@ -445,6 +537,13 @@ def send_email_summary():
         mail.send(msg)
         flash('Email summary sent successfully!')
         session['email_sent'] = True
+        
+        # Track successful email summary
+        track_event('email_summary_sent', {
+            'events_count': len(created_events),
+            'email_domain': email.split('@')[-1] if '@' in email else 'unknown'
+        })
+        
     except Exception as e:
         logger.exception("Email sending failed")
         flash(f"Failed to send email: {e}")
@@ -459,6 +558,21 @@ def download_ics():
     if not courses_to_export:
         flash('No selected courses to export. Your session might have expired.')
         return redirect(url_for('index'))
+
+    # Track ICS download
+    track_event('ics_downloaded', {
+        'courses_count': len(courses_to_export),
+        'provider': 'apple/outlook'
+    })
+    
+    # Track for advanced analytics (if available)
+    try:
+        from advanced_analytics import analytics
+        upload_id = session.get('upload_id', 'unknown')
+        analytics.mark_events_created(upload_id, 'apple')
+    except ImportError:
+        # Advanced analytics not available
+        pass
 
     cal = ICalendar()
     cal.add('prodid', '-//SchedShare//EN')
@@ -537,6 +651,91 @@ def terms():
 @app.route('/home')
 def home():
     return render_template('home.html')
+
+@app.route('/analytics')
+def analytics_dashboard():
+    """Analytics dashboard for tracking usage metrics"""
+    # Basic authentication check
+    auth_token = request.args.get('token')
+    expected_token = os.getenv('ANALYTICS_TOKEN', 'schedshare-analytics-2025')
+    
+    if auth_token != expected_token:
+        return render_template('analytics_login.html')
+    
+    try:
+        analytics = get_analytics_summary()
+        
+        # Calculate some derived metrics
+        total_uploads = int(analytics['total'].get('pdf_uploaded', 0))
+        total_events_selected = int(analytics['total'].get('events_selected', 0))
+        total_google_events = int(analytics['total'].get('google_events_created', 0))
+        total_ics_downloads = int(analytics['total'].get('ics_downloaded', 0))
+        total_emails = int(analytics['total'].get('email_summary_sent', 0))
+        
+        # Calculate conversion rates
+        conversion_rate = (total_events_selected / total_uploads * 100) if total_uploads > 0 else 0
+        google_usage_rate = (total_google_events / total_events_selected * 100) if total_events_selected > 0 else 0
+        ics_usage_rate = (total_ics_downloads / total_events_selected * 100) if total_events_selected > 0 else 0
+        
+        # Get today's stats
+        today_uploads = int(analytics['today'].get('pdf_uploaded', 0))
+        today_events = int(analytics['today'].get('events_selected', 0))
+        today_google = int(analytics['today'].get('google_events_created', 0))
+        today_ics = int(analytics['today'].get('ics_downloaded', 0))
+        today_emails = int(analytics['today'].get('email_summary_sent', 0))
+        
+        return render_template('analytics.html', 
+                             analytics=analytics,
+                             total_uploads=total_uploads,
+                             total_events_selected=total_events_selected,
+                             total_google_events=total_google_events,
+                             total_ics_downloads=total_ics_downloads,
+                             total_emails=total_emails,
+                             conversion_rate=conversion_rate,
+                             google_usage_rate=google_usage_rate,
+                             ics_usage_rate=ics_usage_rate,
+                             today_uploads=today_uploads,
+                             today_events=today_events,
+                             today_google=today_google,
+                             today_ics=today_ics,
+                             today_emails=today_emails)
+    except Exception as e:
+        logger.exception("Error loading analytics dashboard")
+        flash(f"Error loading analytics: {str(e)}")
+        return redirect(url_for('index'))
+
+@app.route('/advanced-analytics')
+def advanced_analytics_dashboard():
+    """Advanced analytics dashboard with department/time analysis"""
+    # Basic authentication check
+    auth_token = request.args.get('token')
+    expected_token = os.getenv('ANALYTICS_TOKEN', 'schedshare-analytics-2025')
+    
+    if auth_token != expected_token:
+        return render_template('analytics_login.html')
+    
+    try:
+        from advanced_analytics import analytics
+        
+        # Get analytics data
+        departments = analytics.get_department_analytics()
+        time_slots = analytics.get_time_analytics()
+        days = analytics.get_day_analytics()
+        summary = analytics.get_summary_stats()
+        
+        # Calculate max for time bar scaling
+        max_time_courses = max([slot['total_courses'] for slot in time_slots]) if time_slots else 0
+        
+        return render_template('advanced_analytics.html',
+                             departments=departments,
+                             time_slots=time_slots,
+                             days=days,
+                             summary=summary,
+                             max_time_courses=max_time_courses)
+    except Exception as e:
+        logger.exception("Error loading advanced analytics dashboard")
+        flash(f"Error loading advanced analytics: {str(e)}")
+        return redirect(url_for('index'))
 
 if __name__ == '__main__':
     # This block is for local development.

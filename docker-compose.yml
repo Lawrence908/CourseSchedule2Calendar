@@ -14,47 +14,14 @@ services:
       - /app/.venv
     depends_on:
       - redis
-    command: python -c "
-import time
-import subprocess
-import sys
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-
-class RestartHandler(FileSystemEventHandler):
-    def __init__(self):
-        self.process = None
-        self.restart_app()
-    
-    def restart_app(self):
-        if self.process:
-            self.process.terminate()
-            self.process.wait()
-        print('Starting Flask app...')
-        self.process = subprocess.Popen([sys.executable, 'app.py'])
-    
-    def on_modified(self, event):
-        if event.is_directory:
-            return
-        if event.src_path.endswith('.py') or event.src_path.endswith('.html'):
-            print(f'File changed: {event.src_path}')
-            self.restart_app()
-
-if __name__ == '__main__':
-    handler = RestartHandler()
-    observer = Observer()
-    observer.schedule(handler, path='.', recursive=True)
-    observer.start()
-    
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-        if handler.process:
-            handler.process.terminate()
-    observer.join()
-"
+    command: python app.py
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   redis:
     image: redis:7-alpine
@@ -63,6 +30,25 @@ if __name__ == '__main__':
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./static:/app/static:ro
+    depends_on:
+      - app
+    restart: unless-stopped
 
 volumes:
   redis_data: 

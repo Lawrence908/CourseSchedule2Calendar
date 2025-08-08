@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Login - SchedShare{% endblock %}
+
+{% block content %}
+<style>
+    .login-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        box-shadow: var(--shadow-3d);
+        position: relative;
+        overflow: hidden;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .login-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    .login-header {
+        text-align: center;
+        padding: 2rem 2rem 1rem;
+    }
+
+    .login-icon {
+        width: 4rem;
+        height: 4rem;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .login-form {
+        padding: 1rem 2rem 2rem;
+    }
+
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+
+    .form-floating .form-control {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-primary);
+    }
+
+    .form-floating .form-control:focus {
+        background: var(--bg-card);
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-floating label {
+        color: var(--text-secondary);
+    }
+
+    .login-btn {
+        width: 100%;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        color: white;
+        transition: all var(--transition-normal);
+    }
+
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg), 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .back-link {
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .back-link a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: color var(--transition-fast);
+    }
+
+    .back-link a:hover {
+        color: var(--accent-primary);
+    }
+</style>
+
+<div class="login-container">
+    <div class="login-header">
+        <div class="login-icon">
+            <i class="bi bi-graph-up"></i>
+        </div>
+        <h2 class="h4 fw-bold text-light mb-2">Analytics Dashboard</h2>
+        <p class="text-secondary mb-0">Enter your access token to view metrics</p>
+    </div>
+    
+    <form class="login-form" method="GET" action="{{ url_for('analytics_dashboard') }}">
+        <div class="form-floating">
+            <input type="password" class="form-control" id="token" name="token" placeholder="Access Token" required>
+            <label for="token">Access Token</label>
+        </div>
+        
+        <button type="submit" class="btn login-btn">
+            <i class="bi bi-arrow-right me-2"></i>
+            Access Dashboard
+        </button>
+    </form>
+    
+    <div class="back-link">
+        <a href="{{ url_for('index') }}">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to SchedShare
+        </a>
+    </div>
+</div>
+
+<script>
+    // Auto-focus on token input
+    document.getElementById('token').focus();
+    
+    // Handle form submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const token = document.getElementById('token').value;
+        if (!token.trim()) {
+            e.preventDefault();
+            alert('Please enter an access token');
+        }
+    });
+</script>
+{% endblock %}
