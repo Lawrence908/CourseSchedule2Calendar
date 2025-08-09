@@ -652,6 +652,54 @@ def terms():
 def home():
     return render_template('home.html')
 
+# --- SEO: sitemap.xml and robots.txt ---
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    """Generate a very small sitemap for public pages."""
+    try:
+        # Only include publicly accessible, indexable pages
+        absolute_urls = [
+            url_for('index', _external=True),
+            url_for('upload', _external=True),
+            url_for('home', _external=True),
+            url_for('privacy', _external=True),
+            url_for('terms', _external=True),
+        ]
+
+        now = datetime.utcnow().strftime('%Y-%m-%d')
+        lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        ]
+        for loc in absolute_urls:
+            lines.append(
+                f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{now}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>"
+            )
+        lines.append('</urlset>')
+        return Response("\n".join(lines), mimetype='application/xml')
+    except Exception as e:
+        logger.exception("Failed generating sitemap.xml: %s", e)
+        # Fallback empty sitemap so crawlers get a valid response
+        return Response("""<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>""",
+                        mimetype='application/xml')
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Expose robots.txt that points to the sitemap and hides non-indexable routes."""
+    rules = [
+        'User-agent: *',
+        # Disallow operational or private routes
+        'Disallow: /upload',
+        'Disallow: /events',
+        'Disallow: /create-events',
+        'Disallow: /oauth2callback',
+        'Disallow: /analytics',
+        'Disallow: /advanced-analytics',
+        # Point to sitemap
+        f"Sitemap: {url_for('sitemap_xml', _external=True)}",
+    ]
+    return Response("\n".join(rules) + "\n", mimetype='text/plain')
+
 @app.route('/analytics')
 def analytics_dashboard():
     """Analytics dashboard for tracking usage metrics"""

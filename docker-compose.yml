@@ -4,17 +4,13 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=production
       - REDIS_URL=redis://redis:6379/0
+      - PORT=5000
     env_file:
       - .env
-    volumes:
-      - .:/app
-      - /app/__pycache__
-      - /app/.venv
     depends_on:
       - redis
-    command: python app.py
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
@@ -22,11 +18,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - uploads/
+            - ssl/
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -51,4 +53,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  redis_data: 
+  redis_data:
