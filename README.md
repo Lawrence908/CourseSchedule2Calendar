@@ -51,7 +51,7 @@ A Python Flask application that extracts course schedules from VIU course schedu
 
 ### Production Mode
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose up -d --build
 ```
 
 ## ☁️ Cloud Deployment
@@ -125,7 +125,7 @@ The application uses Redis for session storage and caching. Redis is included in
 docker-compose logs -f
 
 # Production
-docker-compose -f docker-compose.prod.yml logs -f
+docker-compose logs -f
 ```
 
 ### Health Checks

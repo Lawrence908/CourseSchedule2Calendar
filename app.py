@@ -174,7 +174,8 @@ APPLE_REDIRECT_URI = os.getenv('APPLE_REDIRECT_URI', 'http://localhost:5000/oaut
 
 @app.route('/')
 def index():
-    return render_template('home.html')
+    """Root route - redirect to home to ensure consistent canonical URLs"""
+    return redirect(url_for('home'), code=301)
 
 @app.route('/start')
 def upload():
@@ -516,7 +517,8 @@ def clear_session():
     upload_id = session.pop('upload_id', None)
     session.clear()
     flash('Session cleared!')
-    return redirect(url_for('index'))
+    # Redirect to home instead of index to avoid potential redirect chains
+    return redirect(url_for('home'))
 
 # Route: Send email summary
 @app.route('/send-email-summary', methods=['POST'])
@@ -655,15 +657,34 @@ def home():
 # --- SEO: sitemap.xml and robots.txt ---
 @app.route('/sitemap.xml')
 def sitemap_xml():
-    """Generate a very small sitemap for public pages."""
+    """Generate a comprehensive sitemap for public pages."""
     try:
-        # Only include publicly accessible, indexable pages
-        absolute_urls = [
-            url_for('index', _external=True),
-            url_for('upload', _external=True),
-            url_for('home', _external=True),
-            url_for('privacy', _external=True),
-            url_for('terms', _external=True),
+        # Define pages with their priorities and change frequencies
+        pages = [
+            {
+                'url': url_for('home', _external=True),
+                'priority': '1.0',
+                'changefreq': 'weekly',
+                'description': 'Home page'
+            },
+            {
+                'url': url_for('upload', _external=True),
+                'priority': '0.9',
+                'changefreq': 'monthly',
+                'description': 'Start page for uploading schedules'
+            },
+            {
+                'url': url_for('privacy', _external=True),
+                'priority': '0.3',
+                'changefreq': 'yearly',
+                'description': 'Privacy policy'
+            },
+            {
+                'url': url_for('terms', _external=True),
+                'priority': '0.3',
+                'changefreq': 'yearly',
+                'description': 'Terms of service'
+            },
         ]
 
         now = datetime.utcnow().strftime('%Y-%m-%d')
@@ -671,10 +692,17 @@ def sitemap_xml():
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         ]
-        for loc in absolute_urls:
+        
+        for page in pages:
             lines.append(
-                f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{now}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>"
+                f"  <url>\n"
+                f"    <loc>{page['url']}</loc>\n"
+                f"    <lastmod>{now}</lastmod>\n"
+                f"    <changefreq>{page['changefreq']}</changefreq>\n"
+                f"    <priority>{page['priority']}</priority>\n"
+                f"  </url>"
             )
+        
         lines.append('</urlset>')
         return Response("\n".join(lines), mimetype='application/xml')
     except Exception as e:
@@ -688,6 +716,13 @@ def robots_txt():
     """Expose robots.txt that points to the sitemap and hides non-indexable routes."""
     rules = [
         'User-agent: *',
+        # Allow crawling of public pages
+        'Allow: /',
+        'Allow: /home',
+        'Allow: /start',
+        'Allow: /privacy',
+        'Allow: /terms',
+        'Allow: /static/',
         # Disallow operational or private routes
         'Disallow: /upload',
         'Disallow: /events',
@@ -695,6 +730,15 @@ def robots_txt():
         'Disallow: /oauth2callback',
         'Disallow: /analytics',
         'Disallow: /advanced-analytics',
+        'Disallow: /clear-session',
+        'Disallow: /send-email-summary',
+        'Disallow: /download-ics',
+        'Disallow: /authorize/',
+        'Disallow: /confirm',
+        'Disallow: /select-provider',
+        'Disallow: /uploads/',
+        # Crawl delay for rate limiting
+        'Crawl-delay: 1',
         # Point to sitemap
         f"Sitemap: {url_for('sitemap_xml', _external=True)}",
     ]
