@@ -72,6 +72,183 @@
         transform: scale(1);
     }
 
+    /* Google Auth Button Styling */
+    .google-auth-btn {
+        background: #ffffff;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #3c4043;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .google-auth-btn:hover {
+        background: #f8f9fa;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        text-decoration: none;
+        color: #3c4043;
+    }
+
+    .google-auth-btn:active {
+        background: #f1f3f4;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+    .google-auth-btn img {
+        width: 18px;
+        height: 18px;
+        margin-right: 8px;
+    }
+
+    /* Google Sign-In Button - Dark Theme Version */
+    .google-signin-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .google-signin-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .google-signin-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-primary);
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .google-signin-btn:hover::before {
+        opacity: 1;
+    }
+
+    .google-signin-btn:active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .google-signin-btn img {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        /* Keep Google logo in original colors for trustworthiness */
+    }
+
+    /* ICS Download Button Styling - Dark Theme Version */
+    .ics-download-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ics-download-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .ics-download-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-secondary);
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .ics-download-btn:hover::before {
+        opacity: 1;
+    }
+
+    .ics-download-btn:active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .ics-download-btn:disabled {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        border-color: var(--border-primary);
+    }
+
+    .ics-download-btn:disabled::before {
+        opacity: 0;
+    }
+
+    /* Calendar Logos Styling */
+    .calendar-logos {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .calendar-logo {
+        width: 20px;
+        height: 20px;
+        /* Keep logos in original colors for brand recognition */
+        opacity: 0.9;
+        transition: opacity var(--transition-fast);
+    }
+
+    .ics-download-btn:hover .calendar-logo {
+        opacity: 1;
+    }
+
     /* Provider Selection Enhancement */
     .provider-selection {
         background: var(--bg-card);
@@ -302,9 +479,8 @@
             </div>
             {% endif %}
             
-            <form id="eventForm" action="{{ url_for('create_selected_events') }}" method="POST">
+            <div>
                 <input type="hidden" name="selected" id="selectedInput" />
-                <input type="hidden" name="provider" id="providerInput" />
                 
                 <div class="row g-3 mb-4">
                     {% for course in courses %}
@@ -330,42 +506,31 @@
                     {% endfor %}
                 </div>
 
-                <!-- Provider Selection -->
+                <!-- Direct Action Buttons -->
                 <div class="mb-4">
-                    <h3 class="h5 fw-bold text-light mb-3">Choose Your Calendar Provider</h3>
+                    <h3 class="h5 fw-bold text-light mb-3" id="calendarSectionTitle">Add to Your Calendar</h3>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="provider-selection" data-provider="google">
-                                <div class="d-flex align-items-center">
-                                    <img class="me-3" style="height: 2.5rem; width: 2.5rem;" src="/static/google-calendar.png" alt="Google Calendar logo">
-                                    <div>
-                                        <h4 class="h6 fw-bold text-light mb-1">Google Calendar</h4>
-                                        <p class="text-muted small mb-0">Sync directly with your Google account</p>
-                                    </div>
-                                </div>
-                            </div>
+                            <a href="{{ url_for('authorize', provider='google') }}" class="google-signin-btn" id="googleAuthBtn">
+                                <img src="/static/google-logo.png" alt="Google">
+                                <span>Continue with Google Calendar</span>
+                            </a>
                         </div>
                         <div class="col-md-6">
-                             <div class="provider-selection" data-provider="apple">
-                                <div class="d-flex align-items-center">
-                                    <img class="me-3" style="height: 2.5rem; width: 2.5rem;" src="/static/apple-calendar.png" alt="Apple Calendar logo">
-                                    <div>
-                                        <h4 class="h6 fw-bold text-light mb-1">Apple/Outlook Calendar</h4>
-                                        <p class="text-muted small mb-0">Download .ICS file for import</p>
-                                    </div>
+                            <button type="button" class="ics-download-btn" id="icsDownloadBtn" disabled>
+                                <div class="calendar-logos me-2">
+                                    <img src="/static/apple-logo.png" alt="Apple" class="calendar-logo">
+                                    <img src="/static/outlook-calendar.png" alt="Outlook Calendar" class="calendar-logo">
                                 </div>
-                            </div>
+                                <span>Download ICS File</span>
+                            </button>
                         </div>
                     </div>
+                    <p class="text-muted small text-center mt-3 mb-0">
+                        Select events above to enable download options
+                    </p>
                 </div>
-
-                <div class="text-end">
-                    <button type="submit" class="btn" id="createBtn" disabled>
-                        <i class="bi bi-calendar-plus me-2"></i>
-                        Create Events
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
         
         {% if created_events %}
@@ -435,24 +600,24 @@
     document.addEventListener('DOMContentLoaded', () => {
         const cards = document.querySelectorAll('.event-card');
         const selectedInput = document.getElementById('selectedInput');
-        const createBtn = document.getElementById('createBtn');
-        const providerSelections = document.querySelectorAll('.provider-selection');
-        const providerInput = document.getElementById('providerInput');
+        const googleAuthBtn = document.getElementById('googleAuthBtn');
+        const icsDownloadBtn = document.getElementById('icsDownloadBtn');
 
         const selectedSet = new Set();
-        let selectedProvider = null;
 
-        function updateFormState() {
+        function updateButtonStates() {
             selectedInput.value = Array.from(selectedSet).join(',');
-            providerInput.value = selectedProvider;
-            createBtn.disabled = selectedSet.size === 0 || !selectedProvider;
+            const hasSelection = selectedSet.size > 0;
             
-            // Update button text based on selection count
-            const btnText = createBtn.querySelector('span') || createBtn.childNodes[createBtn.childNodes.length - 1];
-            if (selectedSet.size > 0) {
-                createBtn.innerHTML = `<i class="bi bi-calendar-plus me-2"></i>Create ${selectedSet.size} Event${selectedSet.size > 1 ? 's' : ''}`;
+            // Enable/disable ICS download button
+            icsDownloadBtn.disabled = !hasSelection;
+            
+            // Update section title with dynamic counting
+            const sectionTitle = document.getElementById('calendarSectionTitle');
+            if (hasSelection) {
+                sectionTitle.textContent = `Add ${selectedSet.size} Event${selectedSet.size > 1 ? 's' : ''} to Your Calendar`;
             } else {
-                createBtn.innerHTML = `<i class="bi bi-calendar-plus me-2"></i>Create Events`;
+                sectionTitle.textContent = 'Add to Your Calendar';
             }
         }
 
@@ -470,17 +635,62 @@
                     card.classList.add('selected');
                     checkmark.classList.remove('opacity-0');
                 }
-                updateFormState();
+                updateButtonStates();
             });
         });
 
-        providerSelections.forEach(selection => {
-            selection.addEventListener('click', () => {
-                providerSelections.forEach(s => s.classList.remove('selected'));
-                selection.classList.add('selected');
-                selectedProvider = selection.getAttribute('data-provider');
-                updateFormState();
-            });
+        // Handle ICS download button click
+        icsDownloadBtn.addEventListener('click', () => {
+            if (selectedSet.size > 0) {
+                // Store selected courses in session via a temporary form submission
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("create_selected_events") }}';
+                
+                const selectedInput = document.createElement('input');
+                selectedInput.type = 'hidden';
+                selectedInput.name = 'selected';
+                selectedInput.value = Array.from(selectedSet).join(',');
+                
+                const providerInput = document.createElement('input');
+                providerInput.type = 'hidden';
+                providerInput.name = 'provider';
+                providerInput.value = 'apple';
+                
+                form.appendChild(selectedInput);
+                form.appendChild(providerInput);
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        });
+
+        // Handle Google Auth button click - store selected courses and redirect
+        googleAuthBtn.addEventListener('click', (e) => {
+            if (selectedSet.size > 0) {
+                e.preventDefault();
+                
+                // Store selected courses in session via a temporary form submission
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("create_selected_events") }}';
+                
+                const selectedInput = document.createElement('input');
+                selectedInput.type = 'hidden';
+                selectedInput.name = 'selected';
+                selectedInput.value = Array.from(selectedSet).join(',');
+                
+                const providerInput = document.createElement('input');
+                providerInput.type = 'hidden';
+                providerInput.name = 'provider';
+                providerInput.value = 'google';
+                
+                form.appendChild(selectedInput);
+                form.appendChild(providerInput);
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
         });
 
         const toggleBtn = document.getElementById('toggleEvents');

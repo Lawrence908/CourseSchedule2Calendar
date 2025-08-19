@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class GoogleCalendarProvider(CalendarProvider):
     """Google Calendar provider implementation."""
     
-    SCOPES = ['https://www.googleapis.com/auth/calendar']
+    SCOPES = ['https://www.googleapis.com/auth/calendar.events.owned']
     
     def get_auth_url(self) -> Tuple[str, str, Any]:
         """Get the Google OAuth URL."""
@@ -22,6 +22,7 @@ class GoogleCalendarProvider(CalendarProvider):
             # Force HTTPS if not already
             redirect_uri = redirect_uri.replace('http://', 'https://', 1)
         print(f"[GoogleCalendarProvider] Using redirect_uri for auth: {redirect_uri}")
+        print(f"[GoogleCalendarProvider] Requesting scopes: {self.SCOPES}")
         flow = Flow.from_client_secrets_file(
             'credentials.json',
             scopes=self.SCOPES,
