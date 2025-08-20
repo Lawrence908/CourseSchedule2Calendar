@@ -186,6 +186,34 @@
         box-shadow: var(--shadow-xl), 0 0 30px rgba(59, 130, 246, 0.4);
     }
 
+    /* Outline Button Styling */
+    .btn-outline-light {
+        border: 2px solid var(--text-primary);
+        color: var(--text-primary);
+        background: transparent;
+        padding: 1rem 3rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        border-radius: 16px;
+        transition: all var(--transition-normal);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .btn-outline-light:hover {
+        background: var(--text-primary);
+        color: var(--bg-primary);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl), 0 0 30px rgba(255, 255, 255, 0.2);
+        text-decoration: none;
+    }
+
+    .btn-outline-light:active {
+        transform: translateY(-2px);
+    }
+
     /* Testimonial Cards */
     .testimonial-card {
         background: var(--bg-card);
@@ -244,7 +272,16 @@
                  <span>Welcome to Sched<span class="text-primary">Share</span></span>
             </h1>
             <p class="lead text-secondary mb-4 fs-4">Effortlessly turn your course schedule PDF into beautiful calendar events.</p>
-            <a href="{{ url_for('upload') }}" class="btn hero-btn shadow-lg">Get Started</a>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{{ url_for('upload') }}" class="btn hero-btn shadow-lg">
+                    <i class="bi bi-play-circle me-2"></i>
+                    Get Started
+                </a>
+                <a href="{{ url_for('watch') }}" class="btn btn-outline-light shadow-lg">
+                    <i class="bi bi-camera-video me-2"></i>
+                    Watch Demo
+                </a>
+            </div>
         </div>
     </div>
 </div>

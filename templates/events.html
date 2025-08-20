@@ -442,6 +442,67 @@
         border-left: 4px solid var(--accent-secondary);
     }
 
+    /* Loading States */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all var(--transition-normal);
+    }
+
+    .loading-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid var(--border-primary);
+        border-top: 4px solid var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Success Animation */
+    .success-animation {
+        animation: successPulse 0.6s ease-out;
+    }
+
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* Micro-interactions */
+    .event-card {
+        transition: all var(--transition-normal), transform 0.2s ease;
+    }
+
+    .event-card:active {
+        transform: scale(0.98);
+    }
+
+    .google-signin-btn:active,
+    .ics-download-btn:active {
+        transform: scale(0.98);
+    }
+
     /* Responsive Improvements */
     @media (max-width: 768px) {
         .event-card {
@@ -596,6 +657,14 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="text-center">
+        <div class="loading-spinner mb-3"></div>
+        <p class="text-light mb-0">Processing your request...</p>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const cards = document.querySelectorAll('.event-card');
@@ -642,6 +711,10 @@
         // Handle ICS download button click
         icsDownloadBtn.addEventListener('click', () => {
             if (selectedSet.size > 0) {
+                // Show loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.classList.add('show');
+                
                 // Store selected courses in session via a temporary form submission
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -669,6 +742,10 @@
         googleAuthBtn.addEventListener('click', (e) => {
             if (selectedSet.size > 0) {
                 e.preventDefault();
+                
+                // Show loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.classList.add('show');
                 
                 // Store selected courses in session via a temporary form submission
                 const form = document.createElement('form');

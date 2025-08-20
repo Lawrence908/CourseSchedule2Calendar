@@ -654,6 +654,32 @@ def terms():
 def home():
     return render_template('home.html')
 
+@app.route('/watch')
+def watch():
+    # Get analytics data for dynamic content
+    try:
+        # Use the same method as the analytics route
+        analytics_data = get_analytics_summary()
+        total_uploads = int(analytics_data['total'].get('pdf_uploaded', 0))
+        print(f"Total uploads: {total_uploads}")
+        
+        # Format the number nicely
+        if total_uploads >= 1000:
+            uploads_text = f"{total_uploads:,}"
+        elif total_uploads >= 100:
+            uploads_text = f"{total_uploads}"
+        else:
+            uploads_text = "dozens of"
+    except (ImportError, AttributeError, KeyError) as e:
+        # Fallback if analytics not available
+        print("Analytics not available")
+        print(f"Error: {e}")
+        print(f"Type: {type(e)}")
+        total_uploads = 0
+        uploads_text = "hundreds of"
+    
+    return render_template('watch.html', total_uploads=total_uploads, uploads_text=uploads_text)
+
 # --- SEO: sitemap.xml and robots.txt ---
 @app.route('/sitemap.xml')
 def sitemap_xml():
@@ -672,6 +698,12 @@ def sitemap_xml():
                 'priority': '0.9',
                 'changefreq': 'monthly',
                 'description': 'Start page for uploading schedules'
+            },
+            {
+                'url': url_for('watch', _external=True),
+                'priority': '0.8',
+                'changefreq': 'monthly',
+                'description': 'How it works demo page'
             },
             {
                 'url': url_for('privacy', _external=True),
@@ -720,6 +752,7 @@ def robots_txt():
         'Allow: /',
         'Allow: /home',
         'Allow: /start',
+        'Allow: /watch',
         'Allow: /privacy',
         'Allow: /terms',
         'Allow: /static/',
