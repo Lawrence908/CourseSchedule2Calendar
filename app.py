@@ -1,7 +1,7 @@
 # filepath: /home/chris/github/CourseSchedule2Calendar/app.py
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from flask import Flask, request, redirect, url_for, render_template, flash, session, Response
+from flask import Flask, request, redirect, url_for, render_template, flash, session, Response, jsonify
 from werkzeug.utils import secure_filename
 import os, secrets
 import logging
@@ -861,6 +861,33 @@ def advanced_analytics_dashboard():
         logger.exception("Error loading advanced analytics dashboard")
         flash(f"Error loading advanced analytics: {str(e)}")
         return redirect(url_for('index'))
+
+@app.route('/portfolio-stats')
+def portfolio_stats():
+    """Public portfolio statistics endpoint"""
+    try:
+        from portfolio_analytics import portfolio_analytics
+        
+        # Get portfolio data
+        portfolio_data = portfolio_analytics.generate_portfolio_stats()
+        
+        # Return JSON for easy integration
+        return jsonify(portfolio_data)
+    except ImportError:
+        return jsonify({'error': 'Portfolio analytics not available'}), 500
+
+@app.route('/portfolio-report')
+def portfolio_report():
+    """Generate markdown portfolio report"""
+    try:
+        from portfolio_analytics import portfolio_analytics
+        
+        # Generate markdown report
+        report = portfolio_analytics.export_portfolio_data('markdown')
+        
+        return Response(report, mimetype='text/markdown')
+    except ImportError:
+        return "Portfolio analytics not available", 500
 
 if __name__ == '__main__':
     # This block is for local development.
