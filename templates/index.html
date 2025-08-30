@@ -4,35 +4,280 @@
 
 {% block content %}
 <style>
-@keyframes pulse-border {
-  0% {
-    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
-  }
+/* Upload Page Specific Enhancements */
+.upload-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 20px;
+    box-shadow: var(--shadow-3d);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
 }
 
+.upload-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+}
+
+.upload-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl), var(--shadow-glow);
+}
+
+/* Enhanced Drop Zone */
 #drop-zone {
-  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
-  animation: pulse-border 2s infinite;
+    transition: all var(--transition-normal);
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--border-primary) !important;
+    border-radius: 20px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+#drop-zone::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    pointer-events: none;
+}
+
+#drop-zone:hover::before,
+#drop-zone.drag-over::before {
+    opacity: 1;
+}
+
+#drop-zone:hover {
+    border-color: var(--accent-primary) !important;
+    background: var(--bg-card);
+    transform: scale(1.01);
+    box-shadow: var(--shadow-md), 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+#drop-zone.drag-over {
+    border-color: var(--accent-secondary) !important;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg), 0 0 30px rgba(16, 185, 129, 0.3);
+}
+
+/* File Info Animation */
+#file-info {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* How It Works Section */
+.process-step {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    transition: all var(--transition-normal);
+    position: relative;
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+.process-step:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-primary);
+}
+
+.step-number {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
+}
+
+.process-step:hover .step-number {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg), 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Instructions Enhancement */
+.instructions-list {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+}
+
+.instructions-list ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.instructions-list li {
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.instructions-list li:last-child {
+    margin-bottom: 0;
+}
+
+.instructions-list a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+.instructions-list a:hover {
+    color: var(--accent-secondary);
+}
+
+/* Flash Message Enhancement */
+.flash-message {
+    position: fixed;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    background: var(--bg-card);
+    border: 1px solid var(--accent-danger);
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-xl);
+    backdrop-filter: blur(12px);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Testimonial Enhancements */
+.testimonial-enhanced {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all var(--transition-normal);
+    position: relative;
+    box-shadow: var(--shadow-md);
+}
+
+.testimonial-enhanced::before {
+    content: '"';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    font-size: 3rem;
+    color: var(--accent-primary);
+    opacity: 0.3;
+    font-family: serif;
+}
+
+.testimonial-enhanced:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Sample PDF Button */
+.sample-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.sample-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.sample-btn i {
+    margin-right: 0.5rem;
+}
+
+/* Provider Icons Enhancement */
+.provider-showcase {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.provider-showcase img {
+    transition: all var(--transition-fast);
+    filter: grayscale(0.3);
+}
+
+.provider-showcase img:hover {
+    transform: scale(1.1) translateY(-4px);
+    filter: grayscale(0);
 }
 </style>
+
 {% with messages = get_flashed_messages() %}
   {% if messages %}
-    <div id="flash-message" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded shadow-lg z-50">
-      {{ messages[0] }}
+    <div id="flash-message" class="flash-message">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ messages[0] }}
     </div>
     <script>
       // Show the flash message as a popup
       const flashMsg = document.getElementById('flash-message');
       if (flashMsg) {
-        flashMsg.classList.remove('hidden');
         setTimeout(() => {
-          flashMsg.classList.add('hidden');
+          flashMsg.style.animation = 'slideDown 0.3s ease-out reverse';
+          setTimeout(() => {
+            flashMsg.remove();
+          }, 300);
         }, 3500); // Hide after 3.5 seconds
       }
     </script>
@@ -41,127 +286,172 @@
 
 <!-- How it Works -->
 <div class="container my-5">
-    <h2 class="h4 fw-semibold text-center mb-4">How it Works</h2>
+    <h2 class="h3 fw-bold text-center mb-5 text-light">How it Works</h2>
     <div class="row text-center g-4">
-        <div class="col">
-            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 4rem; height: 4rem;"><span class="fs-2">1</span></div>
-            <p class="fw-medium">Upload PDF</p>
-            <p class="text-muted small">Drag and drop or select your course schedule PDF.</p>
-        </div>
-        <div class="col">
-            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 4rem; height: 4rem;"><span class="fs-2">2</span></div>
-            <p class="fw-medium">Select Events</p>
-            <p class="text-muted small">Choose which courses to add to your calendar.</p>
-        </div>
-        <div class="col">
-            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 4rem; height: 4rem;"><span class="fs-2">3</span></div>
-            <p class="fw-medium">Add to Calendar</p>
-            <p class="text-muted small">Sync with Google, Apple, or download ICS.</p>
-        </div>
-    </div>
-</div>
-
-<!-- Supported Providers -->
-<div class="container mb-5 text-center">
-    <h3 class="h5 fw-semibold mb-2">Supported Providers</h3>
-    <div class="d-flex justify-content-center gap-4 align-items-center">
-        <img src="/static/google-calendar.png" alt="Google Calendar" style="height: 2.5rem; width: 2.5rem;" />
-        <img src="/static/apple-calendar.png" alt="Apple Calendar" style="height: 2.5rem; width: 2.5rem;" />
-        <img src="/static/outlook-calendar.png" alt="Outlook Calendar" style="height: 2.5rem; width: 2.5rem;" />
-    </div>
-</div>
-
-<!-- Testimonials / Why Use This? -->
-<div class="container mb-5">
-    <h3 class="h5 fw-semibold text-center mb-3">Why Use SchedShare?</h3>
-    <div class="row g-4 text-center">
-        <div class="col-md-4">
-            <div class="card bg-dark text-light h-100 shadow">
-                <div class="card-body">
-                    <p class="card-text">“Saved me hours of manual entry. My whole semester is in my phone!”</p>
-                    <span class="d-block mt-2 text-muted small">— Student</span>
-                </div>
+        <div class="col-lg-4">
+            <div class="process-step">
+                <div class="step-number">1</div>
+                <h3 class="h5 fw-bold text-primary mb-3">Upload PDF</h3>
+                <p class="text-secondary mb-0">Drag and drop or select your course schedule PDF from VIU Student Records.</p>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-dark text-light h-100 shadow">
-                <div class="card-body">
-                    <p class="card-text">“Super easy to use, and I love the Google Calendar integration.”</p>
-                    <span class="d-block mt-2 text-muted small">— Grad Student</span>
-                </div>
+        <div class="col-lg-4">
+            <div class="process-step">
+                <div class="step-number">2</div>
+                <h3 class="h5 fw-bold text-primary mb-3">Select Events</h3>
+                <p class="text-secondary mb-0">Choose which courses to add to your calendar from the parsed schedule.</p>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-dark text-light h-100 shadow">
-                <div class="card-body">
-                    <p class="card-text">“No more missed classes. I wish I had this in first year!”</p>
-                    <span class="d-block mt-2 text-muted small">— Undergrad</span>
-                </div>
+        <div class="col-lg-4">
+            <div class="process-step">
+                <div class="step-number">3</div>
+                <h3 class="h5 fw-bold text-primary mb-3">Add to Calendar</h3>
+                <p class="text-secondary mb-0">Sync with Google, Apple Calendar, or download ICS for Outlook.</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Upload Form (now visible) -->
+<!-- Upload Form -->
 <div id="uploadSection">
-    <div class="card shadow">
+    <div class="upload-card">
         <div class="card-body">
-            <div class="mb-3 text-end">
-                <a href="{{ url_for('clear_session') }}" class="btn btn-sm btn-secondary">Clear Session</a>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h4 fw-bold text-light mb-0">Upload Your Course Schedule</h2>
+                <a href="{{ url_for('clear_session') }}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Clear Session
+                </a>
             </div>
-            <h2 class="h5 fw-medium text-light mb-3">Upload Your Course Schedule</h2>
-            <div class="mb-4 text-muted">
-                <p>To get your course schedule:</p>
-                <ol class="ms-4">
-                    <li>Go to <a href="https://students.viu.ca/SRS/mystudentrecord.htm#coursehistory" target="_blank" rel="noopener" class="text-primary">My Student Record</a></li>
+            
+            <div class="instructions-list">
+                <p class="text-light fw-medium mb-3">To get your course schedule:</p>
+                <ol>
+                    <li>Go to <a href="https://students.viu.ca/SRS/mystudentrecord.htm#coursehistory" target="_blank" rel="noopener">My Student Record</a></li>
                     <li>Navigate to Academics → Course Enrollment History</li>
                     <li>Select "Course Schedule" for your desired semester</li>
                     <li>Save or download the PDF</li>
                 </ol>
             </div>
+            
             <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
                 <div class="upload-area mb-4">
-                    <div id="drop-zone" class="border border-primary border-2 border-dashed rounded-3 p-4 text-center position-relative bg-primary bg-opacity-10">
+                    <div id="drop-zone" class="p-5 text-center position-relative">
                         <input id="file" name="file" type="file" class="position-absolute w-100 h-100 opacity-0" style="top: 0; left: 0; cursor: pointer;" accept=".pdf" required />
-                        <div class="py-4">
-                            <img src="/static/pdf-icon.png" alt="PDF icon" style="height: 48px; width: 48px;" class="mb-3">
+                        <div class="py-3">
+                            <img src="/static/pdf-icon.png" alt="PDF icon" style="height: 64px; width: 64px;" class="mb-3">
                             <div id="upload-text">
-                                <p class="mb-2">Drag and drop your course schedule PDF here</p>
-                                <p class="text-muted small mb-0">or click to browse files</p>
+                                <h4 class="h5 text-primary fw-bold mb-2">Drag and drop your course schedule PDF here</h4>
+                                <p class="text-secondary mb-0">or click to browse files</p>
+                                <small class="text-muted d-block mt-2">Maximum file size: 10MB</small>
                             </div>
                             <div id="file-info" class="d-none">
-                                <p class="mb-2 text-primary">Selected file:</p>
-                                <p id="file-name" class="mb-0"></p>
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-check-circle-fill text-success fs-3 me-2"></i>
+                                    <div>
+                                        <p class="text-primary fw-bold mb-1">Selected file:</p>
+                                        <p id="file-name" class="text-light mb-0"></p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Upload and Process</button>
+                
+                <div class="d-flex flex-column flex-sm-row gap-3 align-items-start">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-upload me-2"></i>
+                        Upload and Process
+                    </button>
+                    <a href="{{ url_for('static', filename='DemoCourseSchedule.PDF') }}" download class="sample-btn">
+                        <i class="bi bi-download"></i>
+                        Download Sample PDF
+                    </a>
+                </div>
+                
+                <p class="text-muted small mt-3">
+                    <i class="bi bi-shield-check me-1"></i>
+                    By uploading, you agree to our <a href="/privacy" class="text-primary">Privacy Policy</a> and <a href="/terms" class="text-primary">Terms of Service</a>. 
+                    Your files are processed securely and deleted after your session.
+                </p>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Supported Providers -->
+<div class="container my-5 text-center">
+    <h3 class="h5 fw-semibold mb-4 text-light">Supported Calendar Providers</h3>
+    <div class="provider-showcase">
+        <div class="d-flex justify-content-center gap-4 align-items-center">
+            <img src="/static/google-calendar.png" alt="Google Calendar" style="height: 3rem; width: 3rem;" />
+            <img src="/static/apple-calendar.png" alt="Apple Calendar" style="height: 3rem; width: 3rem;" />
+            <img src="/static/outlook-calendar.png" alt="Outlook Calendar" style="height: 3rem; width: 3rem;" />
+        </div>
+    </div>
+</div>
+
+<!-- Testimonials -->
+<div class="container my-5">
+    <h3 class="h4 fw-bold text-center mb-5 text-light">Why Use SchedShare?</h3>
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="testimonial-enhanced h-100">
+                <p class="text-light mb-3">"Saved me hours of manual entry. My whole semester is in my phone!"</p>
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="bg-primary bg-opacity-20 rounded-circle p-2 me-3">
+                        <i class="bi bi-person-fill text-primary"></i>
+                    </div>
+                    <span class="text-muted small fw-medium">— Student</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="testimonial-enhanced h-100">
+                <p class="text-light mb-3">"Super easy to use, and I love the Google Calendar integration."</p>
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="bg-success bg-opacity-20 rounded-circle p-2 me-3">
+                        <i class="bi bi-mortarboard-fill text-success"></i>
+                    </div>
+                    <span class="text-muted small fw-medium">— Grad Student</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="testimonial-enhanced h-100">
+                <p class="text-light mb-3">"No more missed classes. I wish I had this in first year!"</p>
+                <div class="d-flex align-items-center justify-content-center">
+                    <div class="bg-warning bg-opacity-20 rounded-circle p-2 me-3">
+                        <i class="bi bi-star-fill text-warning"></i>
+                    </div>
+                    <span class="text-muted small fw-medium">— Undergrad</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 const fileInput = document.getElementById('file');
 const dropZone = document.getElementById('drop-zone');
+const uploadText = document.getElementById('upload-text');
+const fileInfo = document.getElementById('file-info');
+const fileName = document.getElementById('file-name');
 
 // Handle drag and drop
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('bg-opacity-10');
-    dropZone.classList.add('bg-opacity-25');
+    dropZone.classList.add('drag-over');
 });
 
 dropZone.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('bg-opacity-25');
-    dropZone.classList.add('bg-opacity-10');
+    dropZone.classList.remove('drag-over');
 });
 
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropZone.classList.remove('bg-opacity-25');
-    dropZone.classList.add('bg-opacity-10');
+    dropZone.classList.remove('drag-over');
     if (e.dataTransfer.files.length) {
         fileInput.files = e.dataTransfer.files;
         updateFileName(e.dataTransfer.files[0]);
@@ -171,27 +461,31 @@ dropZone.addEventListener('drop', (e) => {
 fileInput.addEventListener('change', (e) => {
     if (e.target.files.length) {
         updateFileName(e.target.files[0]);
+    } else {
+        resetFileDisplay();
     }
 });
 
 function updateFileName(file) {
-    const uploadText = document.getElementById('upload-text');
-    const fileInfo = document.getElementById('file-info');
-    const fileName = document.getElementById('file-name');
-    
     uploadText.classList.add('d-none');
     fileInfo.classList.remove('d-none');
     fileName.textContent = file.name;
+    
+    // Add a subtle success animation
+    fileInfo.style.animation = 'none';
+    fileInfo.offsetHeight; // Trigger reflow
+    fileInfo.style.animation = 'slideIn 0.3s ease-out';
 }
 
+function resetFileDisplay() {
+    uploadText.classList.remove('d-none');
+    fileInfo.classList.add('d-none');
+}
+
+// Reset display when clicking without selecting file
 fileInput.addEventListener('click', (e) => {
-    // Reset the display if no file is selected
     if (!fileInput.files.length) {
-        const uploadText = document.getElementById('upload-text');
-        const fileInfo = document.getElementById('file-info');
-        
-        uploadText.classList.remove('d-none');
-        fileInfo.classList.add('d-none');
+        resetFileDisplay();
     }
 });
 </script>

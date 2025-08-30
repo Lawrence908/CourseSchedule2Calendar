@@ -4,138 +4,664 @@
 
 {% block content %}
 <style>
+    /* Event Card Enhancements */
     .event-card {
-        transition: all 0.2s ease-in-out;
-        border: 2px solid transparent;
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        box-shadow: var(--shadow-3d);
+        transition: all var(--transition-normal);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
     }
+
+    .event-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+        transform: scaleX(0);
+        transition: transform var(--transition-normal);
+    }
+
     .event-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-xl), var(--shadow-glow);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .event-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .event-card.selected {
+        border-color: var(--accent-secondary);
+        background: var(--bg-card-hover);
+        box-shadow: var(--shadow-lg), 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .event-card.selected::before {
+        background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary), var(--accent-secondary));
+        transform: scaleX(1);
+    }
+
+    /* Selection Indicator Enhancement */
+    .selection-indicator {
+        transition: all var(--transition-normal);
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        padding: 0.25rem;
+    }
+
+    .selection-indicator.opacity-0 {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    .selection-indicator:not(.opacity-0) {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* Google Auth Button Styling */
+    .google-auth-btn {
+        background: #ffffff;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #3c4043;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .google-auth-btn:hover {
+        background: #f8f9fa;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        text-decoration: none;
+        color: #3c4043;
+    }
+
+    .google-auth-btn:active {
+        background: #f1f3f4;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+    .google-auth-btn img {
+        width: 18px;
+        height: 18px;
+        margin-right: 8px;
+    }
+
+    /* Google Sign-In Button - Dark Theme Version */
+    .google-signin-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .google-signin-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .google-signin-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-primary);
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .google-signin-btn:hover::before {
+        opacity: 1;
+    }
+
+    .google-signin-btn:active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .google-signin-btn img {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        /* Keep Google logo in original colors for trustworthiness */
+    }
+
+    /* ICS Download Button Styling - Dark Theme Version */
+    .ics-download-btn {
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: var(--text-primary);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ics-download-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .ics-download-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-secondary);
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .ics-download-btn:hover::before {
+        opacity: 1;
+    }
+
+    .ics-download-btn:active {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .ics-download-btn:disabled {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        border-color: var(--border-primary);
+    }
+
+    .ics-download-btn:disabled::before {
+        opacity: 0;
+    }
+
+    /* Calendar Logos Styling */
+    .calendar-logos {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .calendar-logo {
+        width: 20px;
+        height: 20px;
+        /* Keep logos in original colors for brand recognition */
+        opacity: 0.9;
+        transition: opacity var(--transition-fast);
+    }
+
+    .ics-download-btn:hover .calendar-logo {
+        opacity: 1;
+    }
+
+    /* Provider Selection Enhancement */
+    .provider-selection {
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .provider-selection::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .provider-selection:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-primary);
+    }
+
+    .provider-selection:hover::before {
+        opacity: 1;
+    }
+
+    .provider-selection.selected {
+        border-color: var(--accent-primary);
+        background: var(--bg-card-hover);
+        box-shadow: var(--shadow-lg), 0 0 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .provider-selection.selected::before {
+        opacity: 1;
+    }
+
+    /* Main Container Enhancement */
+    .events-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        box-shadow: var(--shadow-3d);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .events-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    /* Toggle Button Enhancement */
+    #toggleEvents {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all var(--transition-fast);
+    }
+
+    #toggleEvents:hover {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border-color: var(--accent-primary);
         transform: translateY(-2px);
     }
-    .event-card.selected {
-        border-color: #198754;
-        background-color: rgba(25, 135, 84, 0.1) !important;
+
+    /* Created Events Enhancement */
+    .created-events-section {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-top: 2rem;
+        box-shadow: var(--shadow-sm);
     }
-    .selection-indicator {
-        transition: opacity 0.2s ease-in-out;
+
+    .created-events-list .list-group-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+        padding: 1rem 1.5rem;
+        transition: all var(--transition-fast);
+        position: relative;
+        overflow: hidden;
     }
-    .provider-selection {
-        cursor: pointer;
-        padding: 1rem;
-        border: 2px solid transparent;
-        border-radius: .5rem;
+
+    .created-events-list .list-group-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--accent-secondary);
     }
-    .provider-selection.selected {
-        border-color: #0d6efd;
-        background-color: rgba(13, 110, 253, 0.1);
+
+    .created-events-list .list-group-item:hover {
+        transform: translateX(8px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Email Form Enhancement */
+    .email-form-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .email-form-container .form-control {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    /* Create Button Enhancement */
+    #createBtn {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        color: white;
+        box-shadow: var(--shadow-md);
+        transition: all var(--transition-normal);
+    }
+
+    #createBtn:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg), 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+
+    #createBtn:disabled {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    /* Course Details Enhancement */
+    .course-title {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+    }
+
+    /* File Info Enhancement */
+    .file-info-container {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .file-info-container img {
+        margin-right: 0.75rem;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    /* Success Alert Enhancement */
+    .alert-success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid var(--accent-secondary);
+        border-radius: 12px;
+        color: #6ee7b7;
+        padding: 1rem 1.5rem;
+        border-left: 4px solid var(--accent-secondary);
+    }
+
+    /* Loading States */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all var(--transition-normal);
+    }
+
+    .loading-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid var(--border-primary);
+        border-top: 4px solid var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Success Animation */
+    .success-animation {
+        animation: successPulse 0.6s ease-out;
+    }
+
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* Micro-interactions */
+    .event-card {
+        transition: all var(--transition-normal), transform 0.2s ease;
+    }
+
+    .event-card:active {
+        transform: scale(0.98);
+    }
+
+    .google-signin-btn:active,
+    .ics-download-btn:active {
+        transform: scale(0.98);
+    }
+
+    /* Responsive Improvements */
+    @media (max-width: 768px) {
+        .event-card {
+            margin-bottom: 1rem;
+        }
+        
+        .provider-selection {
+            margin-bottom: 1rem;
+        }
+        
+        .events-container {
+            border-radius: 16px;
+        }
     }
 </style>
 
-<div class="card shadow">
+<div class="events-container">
     <div class="card-body">
         {% if get_flashed_messages() %}
         {# The flashed messages will be displayed at the top from base.html #}
         {% endif %}
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h2 class="h5 fw-bold text-light">Identified Events</h2>
-            <button id="toggleEvents" class="btn btn-sm btn-outline-light" type="button">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h2 class="h4 fw-bold text-light mb-0">Identified Events</h2>
+            <button id="toggleEvents" class="btn btn-sm" type="button">
                 <span id="arrowIcon" class="bi {% if created_events %}bi-chevron-up{% else %}bi-chevron-down{% endif %}"></span>
+                <span class="ms-1">{% if created_events %}Hide{% else %}Show{% endif %} Details</span>
             </button>
         </div>
+        
         <div id="eventsSection" {% if created_events %}class="d-none"{% endif %}>
-        {% if filename %}
-        <div class="d-flex align-items-center mb-3">
-            <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;" class="me-2">
-            <span class="text-light small">{{ filename }}</span>
-        </div>
-        {% endif %}
-        <form id="eventForm" action="{{ url_for('create_selected_events') }}" method="POST">
-            <input type="hidden" name="selected" id="selectedInput" />
-            <input type="hidden" name="provider" id="providerInput" />
-            <div class="row g-3">
-                {% for course in courses %}
-                <div data-index="{{ loop.index0 }}" class="col-md-6 col-lg-4">
-                    <div class="card h-100 event-card bg-secondary bg-opacity-25 text-light" style="cursor: pointer;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h3 class="h6 fw-bold text-primary mb-0">{{ course['Course'] }}</h3>
+            {% if filename %}
+            <div class="file-info-container">
+                <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;">
+                <span class="text-light fw-medium">{{ filename }}</span>
+            </div>
+            {% endif %}
+            
+            <div>
+                <input type="hidden" name="selected" id="selectedInput" />
+                
+                <div class="row g-3 mb-4">
+                    {% for course in courses %}
+                    <div data-index="{{ loop.index0 }}" class="col-md-6 col-xl-4">
+                        <div class="event-card">
+                            <div class="card-body position-relative">
                                 <div class="selection-indicator opacity-0">
                                     <i class="bi bi-check-circle-fill text-success fs-5"></i>
                                 </div>
-                            </div>
-                            <p class="mb-1"><strong>Section:</strong> {{ course['Section'] }}</p>
-                            <p class="mb-1"><strong>Instructor:</strong> {{ course['Instructor'] }}</p>
-                            <p class="mb-1"><strong>Location:</strong> {{ course['Location'] }}</p>
-                            <p class="mb-1"><strong>Days:</strong> {{ course['Days'] }}</p>
-                            <p class="mb-1"><strong>Time:</strong> {{ course['Start'] }} - {{ course['End'] }}</p>
-                            <p class="mb-1"><strong>Start:</strong> {{ course['StartDate'] }} | <strong>End:</strong> {{ course['EndDate'] }}</p>
-                            <p class="text-muted small mb-0">Status: {{ course['Status'] }} | Mode: {{ course['DeliveryMode'] }}</p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <!-- Provider Selection -->
-            <div class="mt-4">
-                <h3 class="h6 fw-bold text-light mb-3">Choose Your Calendar</h3>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="provider-selection bg-secondary bg-opacity-25" data-provider="google">
-                            <div class="d-flex align-items-center">
-                                <img class="me-3" style="height: 2.5rem; width: 2.5rem;" src="/static/google-calendar.png" alt="Google Calendar logo">
-                                <div>
-                                    <h4 class="h6 fw-bold text-light mb-1">Google Calendar</h4>
-                                    <p class="text-muted small mb-0">Sync with your Google account</p>
+                                <h3 class="h6 course-title mb-3">{{ course['Course'] }}</h3>
+                                <div class="course-details">
+                                    <p class="mb-2 text-light"><strong>Section:</strong> <span class="text-secondary">{{ course['Section'] }}</span></p>
+                                    <p class="mb-2 text-light"><strong>Instructor:</strong> <span class="text-secondary">{{ course['Instructor'] }}</span></p>
+                                    <p class="mb-2 text-light"><strong>Location:</strong> <span class="text-secondary">{{ course['Location'] }}</span></p>
+                                    <p class="mb-2 text-light"><strong>Days:</strong> <span class="text-secondary">{{ course['Days'] }}</span></p>
+                                    <p class="mb-2 text-light"><strong>Time:</strong> <span class="text-secondary">{{ course['Start'] }} - {{ course['End'] }}</span></p>
+                                    <p class="mb-2 text-light"><strong>Duration:</strong> <span class="text-secondary">{{ course['StartDate'] }} to {{ course['EndDate'] }}</span></p>
+                                    <p class="text-muted small mb-0">{{ course['Status'] }} • {{ course['DeliveryMode'] }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                         <div class="provider-selection bg-secondary bg-opacity-25" data-provider="apple">
-                            <div class="d-flex align-items-center">
-                                <img class="me-3" style="height: 2.5rem; width: 2.5rem;" src="/static/apple-calendar.png" alt="Apple Calendar logo">
-                                <div>
-                                    <h4 class="h6 fw-bold text-light mb-1">Apple/Outlook Calendar</h4>
-                                    <p class="text-muted small mb-0">Download .ICS file</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Direct Action Buttons -->
+                <div class="mb-4">
+                    <h3 class="h5 fw-bold text-light mb-3" id="calendarSectionTitle">Add to Your Calendar</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('authorize', provider='google') }}" class="google-signin-btn" id="googleAuthBtn">
+                                <img src="/static/google-logo.png" alt="Google">
+                                <span>Continue with Google Calendar</span>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="ics-download-btn" id="icsDownloadBtn" disabled>
+                                <div class="calendar-logos me-2">
+                                    <img src="/static/apple-logo.png" alt="Apple" class="calendar-logo">
+                                    <img src="/static/outlook-calendar.png" alt="Outlook Calendar" class="calendar-logo">
                                 </div>
-                            </div>
+                                <span>Download ICS File</span>
+                            </button>
                         </div>
                     </div>
+                    <p class="text-muted small text-center mt-3 mb-0">
+                        Select events above to enable download options
+                    </p>
                 </div>
             </div>
-
-            <div class="mt-4 text-end">
-                <button type="submit" class="btn btn-primary" id="createBtn" disabled>Create Events</button>
-            </div>
-        </form>
         </div>
+        
         {% if created_events %}
-        <div class="mt-5">
-            <h3 class="h6 fw-bold text-success mb-2">Created Events</h3>
-            <ul class="list-group mb-4">
+        <div class="created-events-section">
+            <h3 class="h5 fw-bold text-success mb-3">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Created Events
+            </h3>
+            <ul class="created-events-list list-group list-unstyled mb-4">
                 {% for event in created_events %}
-                <li class="list-group-item bg-dark text-light">
-                    <a href="{{ event.htmlLink }}" class="text-primary text-decoration-underline" target="_blank">{{ event.summary }}</a>
+                <li class="list-group-item">
+                    <a href="{{ event.htmlLink }}" class="text-primary text-decoration-none fw-medium" target="_blank">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        {{ event.summary }}
+                        <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                    </a>
                 </li>
                 {% endfor %}
             </ul>
+            
             <!-- Email and ICS download section -->
-            <div class="mb-3">
-                <form action="{{ url_for('send_email_summary') }}" method="POST" class="mb-2 d-flex flex-column align-items-center gap-2">
-                    <label for="email" class="form-label">Send a summary to your email:</label>
-                    <input type="email" name="email" id="email" required class="form-control w-auto" placeholder="you@email.com" />
-                    <button type="submit" class="btn btn-primary">Send Email</button>
-                    <span class="text-muted small mt-1">We only use your email to send this summary. <a href="/privacy" class="text-decoration-underline">Privacy Policy</a></span>
-                </form>
-                <form action="{{ url_for('download_ics') }}" method="POST" class="text-center">
-                    <button type="submit" class="btn btn-success">Download ICS for Apple/Outlook</button>
-                </form>
-                {% if email_sent %}
-                <div class="mt-2 alert alert-success p-2">Email sent successfully!</div>
-                {% endif %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="email-form-container">
+                        <form action="{{ url_for('send_email_summary') }}" method="POST">
+                            <h4 class="h6 fw-bold text-light mb-3">Email Summary</h4>
+                            <div class="mb-3">
+                                <input type="email" name="email" id="email" required class="form-control" placeholder="you@email.com" />
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-envelope me-2"></i>
+                                Send Email
+                            </button>
+                            <p class="text-muted small mt-2 mb-0">
+                                We only use your email for this summary. 
+                                <a href="/privacy" class="text-decoration-none">Privacy Policy</a> | <a href="/terms" class="text-decoration-none">Terms of Service</a>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="email-form-container">
+                        <form action="{{ url_for('download_ics') }}" method="POST">
+                            <h4 class="h6 fw-bold text-light mb-3">Download Calendar</h4>
+                            <p class="text-secondary small mb-3">Get an .ICS file for Apple Calendar, Outlook, or other apps</p>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-download me-2"></i>
+                                Download ICS
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
+            
+            {% if email_sent %}
+            <div class="mt-3 alert alert-success">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Email sent successfully!
+            </div>
+            {% endif %}
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="text-center">
+        <div class="loading-spinner mb-3"></div>
+        <p class="text-light mb-0">Processing your request...</p>
     </div>
 </div>
 
@@ -143,23 +669,32 @@
     document.addEventListener('DOMContentLoaded', () => {
         const cards = document.querySelectorAll('.event-card');
         const selectedInput = document.getElementById('selectedInput');
-        const createBtn = document.getElementById('createBtn');
-        const providerSelections = document.querySelectorAll('.provider-selection');
-        const providerInput = document.getElementById('providerInput');
+        const googleAuthBtn = document.getElementById('googleAuthBtn');
+        const icsDownloadBtn = document.getElementById('icsDownloadBtn');
 
         const selectedSet = new Set();
-        let selectedProvider = null;
 
-        function updateFormState() {
+        function updateButtonStates() {
             selectedInput.value = Array.from(selectedSet).join(',');
-            providerInput.value = selectedProvider;
-            createBtn.disabled = selectedSet.size === 0 || !selectedProvider;
+            const hasSelection = selectedSet.size > 0;
+            
+            // Enable/disable ICS download button
+            icsDownloadBtn.disabled = !hasSelection;
+            
+            // Update section title with dynamic counting
+            const sectionTitle = document.getElementById('calendarSectionTitle');
+            if (hasSelection) {
+                sectionTitle.textContent = `Add ${selectedSet.size} Event${selectedSet.size > 1 ? 's' : ''} to Your Calendar`;
+            } else {
+                sectionTitle.textContent = 'Add to Your Calendar';
+            }
         }
 
         cards.forEach((card, idx) => {
             card.addEventListener('click', () => {
                 const index = card.parentElement.getAttribute('data-index');
                 const checkmark = card.querySelector('.selection-indicator');
+                
                 if (selectedSet.has(index)) {
                     selectedSet.delete(index);
                     card.classList.remove('selected');
@@ -169,17 +704,70 @@
                     card.classList.add('selected');
                     checkmark.classList.remove('opacity-0');
                 }
-                updateFormState();
+                updateButtonStates();
             });
         });
 
-        providerSelections.forEach(selection => {
-            selection.addEventListener('click', () => {
-                providerSelections.forEach(s => s.classList.remove('selected'));
-                selection.classList.add('selected');
-                selectedProvider = selection.getAttribute('data-provider');
-                updateFormState();
-            });
+        // Handle ICS download button click
+        icsDownloadBtn.addEventListener('click', () => {
+            if (selectedSet.size > 0) {
+                // Show loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.classList.add('show');
+                
+                // Store selected courses in session via a temporary form submission
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("create_selected_events") }}';
+                
+                const selectedInput = document.createElement('input');
+                selectedInput.type = 'hidden';
+                selectedInput.name = 'selected';
+                selectedInput.value = Array.from(selectedSet).join(',');
+                
+                const providerInput = document.createElement('input');
+                providerInput.type = 'hidden';
+                providerInput.name = 'provider';
+                providerInput.value = 'apple';
+                
+                form.appendChild(selectedInput);
+                form.appendChild(providerInput);
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        });
+
+        // Handle Google Auth button click - store selected courses and redirect
+        googleAuthBtn.addEventListener('click', (e) => {
+            if (selectedSet.size > 0) {
+                e.preventDefault();
+                
+                // Show loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.classList.add('show');
+                
+                // Store selected courses in session via a temporary form submission
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("create_selected_events") }}';
+                
+                const selectedInput = document.createElement('input');
+                selectedInput.type = 'hidden';
+                selectedInput.name = 'selected';
+                selectedInput.value = Array.from(selectedSet).join(',');
+                
+                const providerInput = document.createElement('input');
+                providerInput.type = 'hidden';
+                providerInput.name = 'provider';
+                providerInput.value = 'google';
+                
+                form.appendChild(selectedInput);
+                form.appendChild(providerInput);
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
         });
 
         const toggleBtn = document.getElementById('toggleEvents');
@@ -188,9 +776,15 @@
 
         if (toggleBtn && eventsSection && arrowIcon) {
             toggleBtn.addEventListener('click', () => {
-                eventsSection.classList.toggle('d-none');
-                arrowIcon.classList.toggle('bi-chevron-up');
-                arrowIcon.classList.toggle('bi-chevron-down');
+                const isHidden = eventsSection.classList.toggle('d-none');
+                arrowIcon.classList.toggle('bi-chevron-up', !isHidden);
+                arrowIcon.classList.toggle('bi-chevron-down', isHidden);
+                
+                // Update button text
+                const btnSpan = toggleBtn.querySelector('span:last-child');
+                if (btnSpan) {
+                    btnSpan.textContent = isHidden ? 'Show Details' : 'Hide Details';
+                }
             });
         }
     });

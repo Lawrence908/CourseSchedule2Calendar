@@ -91,10 +91,12 @@ def authenticate_google_calendar_cli():
 
 def get_google_auth_url():
     """Get the Google OAuth URL for web authentication."""
+    redirect_uri = os.getenv('GOOGLE_REDIRECT_URI', 'https://schedshare.chrislawrence.ca/oauth2callback')
+    print(f"Redirect URI: {redirect_uri}")
     flow = Flow.from_client_secrets_file(
         'credentials.json',
         scopes=SCOPES,
-        redirect_uri='http://localhost:5000/oauth2callback'
+        redirect_uri=redirect_uri
     )
     auth_url, state = flow.authorization_url(
         access_type='offline',

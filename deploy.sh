@@ -19,11 +19,14 @@ if ! command -v docker &> /dev/null; then
     rm get-docker.sh
 fi
 
-# Install Docker Compose
-echo "📋 Installing Docker Compose..."
-if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+# Install Docker Compose v2 plugin if available; fallback to v1
+echo "📋 Ensuring Docker Compose is available..."
+if ! docker compose version &> /dev/null; then
+    if ! command -v docker-compose &> /dev/null; then
+        echo "⚠️  Docker Compose not found. Installing v2 plugin via apt..."
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-plugin
+    fi
 fi
 
 # Create app directory
@@ -49,8 +52,8 @@ sudo mkdir -p /opt/schedshare/ssl
 # Generate self-signed certificate for development
 echo "🔐 Generating SSL certificate..."
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /opt/schedshare/ssl/key.pem \
-    -out /opt/schedshare/ssl/cert.pem \
+    -keyout /etc/letsencrypt/live/schedshare.chrislawrence.ca/fullchain.pem \
+    -out /etc/letsencrypt/live/schedshare.chrislawrence.ca/fullchain.pem \
     -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
 
 sudo chown -R $USER:$USER /opt/schedshare/ssl
@@ -67,8 +70,8 @@ After=docker.service
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/schedshare
-ExecStart=/usr/local/bin/docker-compose -f docker-compose.prod.yml up -d
-ExecStop=/usr/local/bin/docker-compose -f docker-compose.prod.yml down
+ExecStart=/usr/bin/env bash -lc '\n  if docker compose version >/dev/null 2>&1; then\n    docker compose up -d\n  elif command -v docker-compose >/dev/null 2>&1; then\n    docker-compose up -d\n  else\n    echo "Docker Compose not found"\n    exit 1\n  fi\n'
+ExecStop=/usr/bin/env bash -lc '\n  if docker compose version >/dev/null 2>&1; then\n    docker compose down\n  elif command -v docker-compose >/dev/null 2>&1; then\n    docker-compose down\n  else\n    echo "Docker Compose not found"\n    exit 1\n  fi\n'
 TimeoutStartSec=0
 
 [Install]
@@ -86,9 +89,18 @@ tee update.sh > /dev/null <<EOF
 #!/bin/bash
 cd /opt/schedshare
 git pull origin main
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml build --no-cache
-docker-compose -f docker-compose.prod.yml up -d
+if docker compose version >/dev/null 2>&1; then
+  docker compose down
+  docker compose build --no-cache
+  docker compose up -d
+elif command -v docker-compose >/dev/null 2>&1; then
+  docker-compose down
+  docker-compose build --no-cache
+  docker-compose up -d
+else
+  echo "Docker Compose not found"
+  exit 1
+fi
 echo "✅ Application updated successfully!"
 EOF
 
@@ -104,4 +116,4 @@ sudo ufw --force enable
 echo "✅ Deployment completed!"
 echo "🌐 Your application should be available at: https://$(curl -s ifconfig.me)"
 echo "📋 To update the application, run: ./update.sh"
-echo "📊 To check logs, run: docker-compose -f docker-compose.prod.yml logs -f" 
+echo "📊 To check logs, run: docker compose logs -f (or docker-compose logs -f)"

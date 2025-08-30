@@ -18,6 +18,7 @@ RUN apt-get update \
         libffi-dev \
         libssl-dev \
         redis-server \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -44,5 +45,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-# Default command (can be overridden)
-CMD ["python", "app.py"] 
+# Default command (can be overridden by Procfile)
+CMD ["sh", "-c", "gunicorn --bind :${PORT:-8080} --workers 1 --threads 8 --timeout 0 app:app"] 
