@@ -1,18 +1,198 @@
 {% extends "base.html" %}
 {% block title %}Privacy Policy - SchedShare{% endblock %}
 {% block content %}
+<style>
+    /* Privacy Page Enhancements */
+    .privacy-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        box-shadow: var(--shadow-3d);
+        position: relative;
+        overflow: hidden;
+        max-width: 50rem;
+        margin: 0 auto;
+    }
+
+    .privacy-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    .privacy-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-top: 1rem;
+    }
+
+    .privacy-title {
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: 700;
+    }
+
+    .privacy-subtitle {
+        color: var(--text-secondary);
+        font-size: 1.125rem;
+        margin-top: 1rem;
+    }
+
+    /* Policy List Enhancement */
+    .policy-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .policy-item {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1rem;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .policy-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+    .policy-item:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .policy-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Contact Link Enhancement */
+    .contact-link {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        transition: all var(--transition-fast);
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .contact-link:hover {
+        color: var(--accent-secondary);
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Footer Note Enhancement */
+    .footer-note {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-top: 2rem;
+        text-align: center;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    /* Icon Enhancement */
+    .policy-icon {
+        color: var(--accent-primary);
+        margin-right: 0.5rem;
+        font-size: 1.125rem;
+    }
+
+    /* Emphasis Text */
+    .policy-item strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .privacy-container {
+            border-radius: 16px;
+            margin: 1rem;
+        }
+        
+        .policy-item {
+            padding: 1.25rem 1.5rem;
+        }
+    }
+</style>
+
 <div class="container mt-5">
-    <div class="card shadow mx-auto" style="max-width: 40rem;">
+    <div class="privacy-container">
         <div class="card-body p-5">
-            <h1 class="h3 fw-bold mb-4 text-light">Privacy Policy</h1>
-            <p class="mb-4 text-light">We value your privacy. Here's how we handle your data:</p>
-            <ul class="list-group list-group-flush mb-4">
-                <li class="list-group-item bg-dark text-light border-0">Your uploaded PDFs and parsed course data are <b>never stored</b> on our servers after processing. They are used only to generate your calendar events and are deleted immediately after your session ends.</li>
-                <li class="list-group-item bg-dark text-light border-0">If you choose to enter your email, it is used <b>only</b> to send you a summary of your calendar events. We may store your email address to notify you of important updates, but we will never share or sell your email.</li>
-                <li class="list-group-item bg-dark text-light border-0">We do not use your data for advertising or analytics.</li>
-                <li class="list-group-item bg-dark text-light border-0">You can contact us at <a href="mailto:chris@chrislawrence.com" class="text-primary text-decoration-underline">chris@chrislawrence.com</a> for any privacy concerns.</li>
+            <div class="privacy-header">
+                <h1 class="h2 privacy-title mb-2">Privacy Policy</h1>
+                <p class="privacy-subtitle">We value your privacy and are committed to protecting your personal data.</p>
+            </div>
+            
+            <ul class="policy-list">
+                <li class="policy-item">
+                    <i class="bi bi-shield-check policy-icon"></i>
+                    <span class="text-light">Your uploaded PDFs and parsed course data are <strong>never stored</strong> on our servers after processing. They are used only to generate your calendar events and are deleted immediately after your session ends.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-envelope-check policy-icon"></i>
+                    <span class="text-light">If you choose to enter your email, it is used <strong>only</strong> to send you a summary of your calendar events. We may store your email address to notify you of important updates, but we will never share or sell your email.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-eye-slash policy-icon"></i>
+                    <span class="text-light">We do <strong>not</strong> use your data for advertising or analytics purposes.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-google policy-icon"></i>
+                    <span class="text-light"><strong>Google User Data Access:</strong> When you connect to Google Calendar, our app requests access to create calendar events in your Google Calendar. We access only the minimum required permissions to create events on your behalf. We do not read, store, or access any other Google user data beyond what is necessary for calendar event creation.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-gear policy-icon"></i>
+                    <span class="text-light"><strong>How We Use Google User Data:</strong> Google user data (calendar access) is used exclusively to create course schedule events in your Google Calendar. We do not store, analyze, or process this data for any other purpose. The access is temporary and used only during the event creation process.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-share policy-icon"></i>
+                    <span class="text-light"><strong>Data Sharing:</strong> We do not share, transfer, or disclose any Google user data with third parties. Your Google Calendar data remains private and is only accessed temporarily to create your course events. We do not sell, rent, or monetize any user data.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-lock policy-icon"></i>
+                    <span class="text-light"><strong>Data Protection:</strong> All data transmission is encrypted using HTTPS/TLS protocols. We implement industry-standard security measures to protect sensitive data. Google user data is accessed through secure OAuth 2.0 authentication and is never stored on our servers.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-trash policy-icon"></i>
+                    <span class="text-light"><strong>Data Retention & Deletion:</strong> Google user data is not retained on our servers. Access tokens are temporary and expire automatically. You can revoke our access to your Google Calendar at any time through your Google Account settings. We do not maintain any persistent storage of your Google user data.</span>
+                </li>
+                <li class="policy-item">
+                    <i class="bi bi-person-lines-fill policy-icon"></i>
+                    <span class="text-light">You can contact us at 
+                        <a href="mailto:chris@chrislawrence.com" class="contact-link">
+                            <i class="bi bi-envelope-fill me-1"></i>
+                            chris@chrislawrence.com
+                        </a> 
+                        for any privacy concerns or questions.</span>
+                </li>
             </ul>
-            <p class="text-muted small">This policy may be updated from time to time. Last updated: 2024-06-16.</p>
+            
+            <div class="footer-note">
+                <i class="bi bi-calendar-event me-1"></i>
+                This policy may be updated from time to time. Last updated: <strong>August 14, 2025</strong>
+            </div>
         </div>
     </div>
 </div>

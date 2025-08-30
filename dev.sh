@@ -11,10 +11,21 @@ if [ ! -f .env ]; then
 fi
 
 # Start the application with file watching
-echo "🐳 Starting Docker Compose with file watching..."
-docker-compose up --build
+echo "🐳 Starting Docker Compose (single file, production defaults)..."
+
+# Prefer Docker Compose v2 (docker compose); fallback to v1 (docker-compose)
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE_CMD="docker-compose"
+else
+  echo "❌ Neither 'docker compose' nor 'docker-compose' found. Please install Docker Compose."
+  exit 1
+fi
+
+$COMPOSE_CMD up --build
 
 echo "✅ Development server started!"
 echo "🌐 Visit: http://localhost:5000"
-echo "📊 Logs: docker-compose logs -f"
-echo "🛑 Stop: docker-compose down" 
+echo "📊 Logs: $COMPOSE_CMD logs -f"
+echo "🛑 Stop: $COMPOSE_CMD down"

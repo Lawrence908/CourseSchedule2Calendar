@@ -155,11 +155,8 @@ For production, replace the self-signed certificates in `/opt/schedshare/ssl/` w
 
 ### View Logs
 ```bash
-# Development
+# Development & Production
 docker-compose logs -f
-
-# Production (VM)
-docker-compose -f docker-compose.prod.yml logs -f
 
 # System service
 sudo journalctl -u schedshare -f

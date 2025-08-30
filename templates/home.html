@@ -3,24 +3,298 @@
 {% block title %}Welcome - SchedShare{% endblock %}
 
 {% block content %}
-<div class="text-center pt-5">
-    <div class="mb-5">
-        <h1 class="display-3 fw-bold text-light mb-4 d-inline-flex align-items-center">
-             <i class="bi bi-calendar-check-fill text-primary me-3"></i>
-             <span>Welcome to Sched<span class="text-primary">Share</span></span>
-        </h1>
-        <p class="lead text-secondary mb-4">Effortlessly turn your course schedule PDF into beautiful calendar events.</p>
-        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg shadow">Get Started</a>
+<style>
+    /* Hero Section Enhancements */
+    .hero-section {
+        background: radial-gradient(ellipse at top, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+        position: relative;
+        padding: 4rem 0;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="grain"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.03"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0"/></radialGradient></defs><rect width="100%" height="100%" fill="url(%23grain)"/></svg>');
+        pointer-events: none;
+    }
+
+    /* Enhanced Video Container */
+    .video-container {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: var(--shadow-3d), 0 0 40px rgba(59, 130, 246, 0.2);
+        transition: all var(--transition-slow);
+    }
+
+    .video-container:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-xl), 0 0 60px rgba(59, 130, 246, 0.3);
+    }
+
+    .video-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .video-container:hover::before {
+        opacity: 1;
+    }
+
+    /* Enhanced Feature Cards */
+    .feature-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        height: 100%;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-3d);
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+        transform: scaleX(0);
+        transition: transform var(--transition-normal);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: var(--shadow-xl), var(--shadow-glow);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .feature-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    /* Transformation Flow Cards */
+    .transform-card {
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 20px;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-3d);
+    }
+
+    .transform-card::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+        animation: rotate 6s linear infinite;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .transform-card:hover::after {
+        opacity: 1;
+    }
+
+    .transform-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--accent-primary);
+        box-shadow: var(--shadow-xl), 0 0 40px rgba(59, 130, 246, 0.2);
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    /* Enhanced Provider Icons */
+    .provider-icons {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: var(--bg-tertiary);
+        border-radius: 16px;
+        border: 1px solid var(--border-primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .provider-icon {
+        transition: all var(--transition-fast);
+        filter: grayscale(0.3);
+    }
+
+    .provider-icon:hover {
+        transform: scale(1.1) translateY(-4px);
+        filter: grayscale(0);
+    }
+
+    /* Enhanced Button */
+    .hero-btn {
+        padding: 1rem 3rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+        border: none;
+        color: white;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+        transition: all var(--transition-normal);
+    }
+
+    .hero-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left var(--transition-slow);
+    }
+
+    .hero-btn:hover::before {
+        left: 100%;
+    }
+
+    .hero-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl), 0 0 30px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Outline Button Styling */
+    .btn-outline-light {
+        border: 2px solid var(--text-primary);
+        color: var(--text-primary);
+        background: transparent;
+        padding: 1rem 3rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        border-radius: 16px;
+        transition: all var(--transition-normal);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .btn-outline-light:hover {
+        background: var(--text-primary);
+        color: var(--bg-primary);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl), 0 0 30px rgba(255, 255, 255, 0.2);
+        text-decoration: none;
+    }
+
+    .btn-outline-light:active {
+        transform: translateY(-2px);
+    }
+
+    /* Testimonial Cards */
+    .testimonial-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-primary);
+        border-radius: 16px;
+        padding: 2rem;
+        height: 100%;
+        transition: all var(--transition-normal);
+        position: relative;
+        box-shadow: var(--shadow-md);
+    }
+
+    .testimonial-card::before {
+        content: '"';
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        font-size: 4rem;
+        color: var(--accent-primary);
+        opacity: 0.3;
+        font-family: serif;
+    }
+
+    .testimonial-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    /* Tab Enhancements */
+    .nav-tabs .nav-link {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        border-radius: 8px 8px 0 0;
+        color: var(--text-secondary);
+        transition: all var(--transition-fast);
+    }
+
+    .nav-tabs .nav-link.active {
+        background: var(--bg-card);
+        border-color: var(--accent-primary);
+        color: var(--text-primary);
+    }
+
+    .nav-tabs .nav-link:hover:not(.active) {
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+</style>
+
+<div class="hero-section">
+    <div class="text-center">
+        <div class="mb-5">
+            <h1 class="display-3 fw-bold text-light mb-4 d-inline-flex align-items-center">
+                 <i class="bi bi-calendar-check-fill text-primary me-3"></i>
+                 <span>Welcome to Sched<span class="text-primary">Share</span></span>
+            </h1>
+            <p class="lead text-secondary mb-4 fs-4">Effortlessly turn your course schedule PDF into beautiful calendar events.</p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{{ url_for('upload') }}" class="btn hero-btn shadow-lg">
+                    <i class="bi bi-play-circle me-2"></i>
+                    Get Started
+                </a>
+                <a href="{{ url_for('watch') }}" class="btn btn-outline-light shadow-lg">
+                    <i class="bi bi-camera-video me-2"></i>
+                    Watch Demo
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Container for dynamic content (video -> features) -->
 <div id="dynamicContentContainer">
-    <div id="videoContainer" class="d-flex justify-content-center">
-        <video id="heroVideo" class="rounded-4 shadow-lg border border-secondary" autoplay muted playsinline style="max-width: 56rem; width: 100%;">
-            <source src="{{ url_for('static', filename='SchedShare.mp4') }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+    <div id="videoContainer" class="d-flex justify-content-center mb-5">
+        <div class="video-container" style="max-width: 56rem; width: 100%;">
+            <video id="heroVideo" class="w-100 h-100" autoplay muted playsinline>
+                <source src="{{ url_for('static', filename='SchedShare.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
     </div>
 
     <div id="featureCardsSection" style="display: none; opacity: 0;">
@@ -29,71 +303,73 @@
             <div class="row justify-content-center g-4 align-items-center">
                 <!-- Source: Course Schedule -->
                 <div class="col-lg-5 text-center">
-                    <div class="card bg-dark border border-primary h-100">
-                        <div class="card-body d-flex flex-column">
-                            <h3 class="h5 text-primary mb-3">Course Schedule</h3>
+                    <div class="transform-card h-100">
+                        <div class="card-body d-flex flex-column position-relative" style="z-index: 2;">
+                            <h3 class="h4 text-primary mb-4 fw-bold">Course Schedule</h3>
                             <div class="flex-grow-1 d-flex align-items-center justify-content-center mb-3">
-                                <div class="bg-secondary bg-opacity-25 rounded p-3" style="width: 100%; height: 200px;">
+                                <div class="bg-secondary bg-opacity-25 rounded-3 p-3" style="width: 100%; height: 220px;">
                                     <!-- Course schedule screenshot -->
-                                    <img src="/static/course-schedule.png" alt="Course Schedule Example" class="img-fluid h-100 w-100 rounded" style="object-fit: cover;">
+                                    <img src="/static/course-schedule.png" alt="Course Schedule Example" class="img-fluid h-100 w-100 rounded-2" style="object-fit: cover;">
                                 </div>
                             </div>
-                            <p class="text-muted small mb-0">Your VIU course schedule PDF</p>
+                            <p class="text-muted mb-0 fw-medium">Your VIU course schedule PDF</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Transformation Arrow -->
                 <div class="col-12 col-lg-1 text-center">
-                    <i class="bi bi-arrow-down d-lg-none fs-1 text-primary my-3"></i>
-                    <i class="bi bi-arrow-right d-none d-lg-block fs-1 text-primary"></i>
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="bi bi-arrow-down d-lg-none fs-1 text-primary my-4" style="filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));"></i>
+                        <i class="bi bi-arrow-right d-none d-lg-block fs-1 text-primary" style="filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));"></i>
+                    </div>
                 </div>
 
                 <!-- Calendar Results -->
                 <div class="col-lg-5 text-center">
-                    <div class="card bg-dark border border-primary h-100">
-                        <div class="card-body d-flex flex-column">
-                            <h3 class="h5 text-primary mb-3">Calendar Events</h3>
+                    <div class="transform-card h-100">
+                        <div class="card-body d-flex flex-column position-relative" style="z-index: 2;">
+                            <h3 class="h4 text-primary mb-4 fw-bold">Calendar Events</h3>
                             <div class="flex-grow-1">
                                 <!-- Calendar Tabs -->
                                 <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#google" type="button">
-                                            <img src="/static/google-calendar.png" alt="Google" style="height: 24px; width: 24px;">
+                                            <img src="/static/google-calendar.png" alt="Google" style="height: 28px; width: 28px;">
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#apple" type="button">
-                                            <img src="/static/apple-calendar.png" alt="Apple" style="height: 24px; width: 24px;">
+                                            <img src="/static/apple-calendar.png" alt="Apple" style="height: 28px; width: 28px;">
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#outlook" type="button">
-                                            <img src="/static/outlook-calendar.png" alt="Outlook" style="height: 24px; width: 24px;">
+                                            <img src="/static/outlook-calendar.png" alt="Outlook" style="height: 28px; width: 28px;">
                                         </button>
                                     </li>
                                 </ul>
                                 <!-- Tab Content -->
                                 <div class="tab-content">
                                     <div class="tab-pane fade show active" id="google">
-                                        <div class="bg-secondary bg-opacity-25 rounded p-3" style="height: 200px;">
-                                            <img src="/static/google-schedule.png" alt="Google Calendar View" class="img-fluid h-100 w-100 rounded" style="object-fit: cover;">
+                                        <div class="bg-secondary bg-opacity-25 rounded-3 p-3" style="height: 220px;">
+                                            <img src="/static/google-schedule.png" alt="Google Calendar View" class="img-fluid h-100 w-100 rounded-2" style="object-fit: cover;">
                                         </div>
                                     </div>
                                     <div class="tab-pane fade" id="apple">
-                                        <div class="bg-secondary bg-opacity-25 rounded p-3" style="height: 200px;">
-                                            <img src="/static/apple-schedule.png" alt="Apple Calendar View" class="img-fluid h-100 w-100 rounded" style="object-fit: cover;">
+                                        <div class="bg-secondary bg-opacity-25 rounded-3 p-3" style="height: 220px;">
+                                            <img src="/static/apple-schedule.png" alt="Apple Calendar View" class="img-fluid h-100 w-100 rounded-2" style="object-fit: cover;">
                                         </div>
                                     </div>
                                     <div class="tab-pane fade" id="outlook">
-                                        <div class="bg-secondary bg-opacity-25 rounded p-3" style="height: 200px;">
-                                            <img src="/static/outlook-schedule.png" alt="Outlook Calendar View" class="img-fluid h-100 w-100 rounded" style="object-fit: cover;">
+                                        <div class="bg-secondary bg-opacity-25 rounded-3 p-3" style="height: 220px;">
+                                            <img src="/static/outlook-schedule.png" alt="Outlook Calendar View" class="img-fluid h-100 w-100 rounded-2" style="object-fit: cover;">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <br>
-                            <p class="text-muted small mb-0">Your events in your preferred calendar</p>
+                            <p class="text-muted mb-0 fw-medium">Your events in your preferred calendar</p>
                         </div>
                     </div>
                 </div>
@@ -104,26 +380,69 @@
         <div class="container py-5">
             <div class="row g-4 justify-content-center">
                 <div class="col-md-4">
-                    <div class="card bg-dark text-light h-100 shadow">
-                        <div class="card-body">
+                    <div class="feature-card">
+                        <div class="text-center">
+                            <i class="bi bi-cpu fs-1 text-primary mb-3"></i>
                             <h3 class="h5 fw-bold text-primary mb-3">Smart Parsing</h3>
-                            <p class="card-text">Automatically extracts course details including times, locations, and instructors from your PDF schedule.</p>
+                            <p class="text-light">Automatically extracts course details including times, locations, and instructors from your PDF schedule.</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card bg-dark text-light h-100 shadow">
-                        <div class="card-body">
+                    <div class="feature-card">
+                        <div class="text-center">
+                            <i class="bi bi-calendar2-range fs-1 text-primary mb-3"></i>
                             <h3 class="h5 fw-bold text-primary mb-3">Multiple Calendars</h3>
-                            <p class="card-text">Seamlessly sync with Google Calendar, Apple Calendar, or download ICS files for Outlook.</p>
+                            <p class="text-light">Seamlessly sync with Google Calendar, Apple Calendar, or download ICS files for Outlook.</p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="card bg-dark text-light h-100 shadow">
-                        <div class="card-body">
+                    <div class="feature-card">
+                        <div class="text-center">
+                            <i class="bi bi-arrow-repeat fs-1 text-primary mb-3"></i>
                             <h3 class="h5 fw-bold text-primary mb-3">Recurring Events</h3>
-                            <p class="card-text">Creates properly scheduled recurring events for your entire semester automatically.</p>
+                            <p class="text-light">Creates properly scheduled recurring events for your entire semester automatically.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testimonials Section -->
+        <div class="container py-5">
+            <h3 class="h4 fw-bold text-center mb-5">Why Use SchedShare?</h3>
+            <div class="row g-4 text-center">
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="text-light mb-3 fs-6">"Saved me hours of manual entry. My whole semester is in my phone!"</p>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="bg-primary bg-opacity-20 rounded-circle p-2 me-3">
+                                <i class="bi bi-person-fill text-primary"></i>
+                            </div>
+                            <span class="text-muted small fw-medium">— Student</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="text-light mb-3 fs-6">"Super easy to use, and I love the Google Calendar integration."</p>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="bg-success bg-opacity-20 rounded-circle p-2 me-3">
+                                <i class="bi bi-mortarboard-fill text-success"></i>
+                            </div>
+                            <span class="text-muted small fw-medium">— Grad Student</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="text-light mb-3 fs-6">"No more missed classes. I wish I had this in first year!"</p>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="bg-warning bg-opacity-20 rounded-circle p-2 me-3">
+                                <i class="bi bi-star-fill text-warning"></i>
+                            </div>
+                            <span class="text-muted small fw-medium">— Undergrad</span>
                         </div>
                     </div>
                 </div>
@@ -132,24 +451,15 @@
 
         <!-- Supported Providers -->
         <div class="container mb-5 text-center">
-            <h3 class="h5 fw-semibold mb-2">Supported Providers</h3>
-            <div class="d-flex justify-content-center gap-4 align-items-center">
-                <img src="/static/google-calendar.png" alt="Google Calendar" style="height: 2.5rem; width: 2.5rem;" />
-                <img src="/static/apple-calendar.png" alt="Apple Calendar" style="height: 2.5rem; width: 2.5rem;" />
-                <img src="/static/outlook-calendar.png" alt="Outlook Calendar" style="height: 2.5rem; width: 2.5rem;" />
+            <h3 class="h5 fw-semibold mb-4">Supported Providers</h3>
+            <div class="provider-icons">
+                <img src="/static/google-calendar.png" alt="Google Calendar" class="provider-icon" style="height: 3rem; width: 3rem;" />
+                <img src="/static/apple-calendar.png" alt="Apple Calendar" class="provider-icon" style="height: 3rem; width: 3rem;" />
+                <img src="/static/outlook-calendar.png" alt="Outlook Calendar" class="provider-icon" style="height: 3rem; width: 3rem;" />
             </div>
         </div>
     </div>
 </div>
-
-<style>
-/* Add responsive adjustments */
-@media (max-width: 767.98px) {
-    .row.justify-content-center.g-4 > div {
-        max-width: 400px;
-    }
-}
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -159,8 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const switchToFeatures = () => {
         // Fade out video section
-        videoContainer.style.transition = 'opacity 0.5s ease-in-out';
+        videoContainer.style.transition = 'opacity 0.8s ease-in-out, transform 0.8s ease-in-out';
         videoContainer.style.opacity = '0';
+        videoContainer.style.transform = 'translateY(-20px)';
         
         // After fade out, remove it from the DOM and show the other section
         setTimeout(() => {
@@ -170,10 +481,15 @@ document.addEventListener('DOMContentLoaded', () => {
             featuresSection.style.display = 'block';
             
             requestAnimationFrame(() => {
-                featuresSection.style.transition = 'opacity 0.5s ease-in-out';
+                featuresSection.style.transition = 'opacity 0.8s ease-in-out, transform 0.8s ease-in-out';
+                featuresSection.style.transform = 'translateY(20px)';
                 featuresSection.style.opacity = '1';
+                
+                requestAnimationFrame(() => {
+                    featuresSection.style.transform = 'translateY(0)';
+                });
             });
-        }, 500); // Corresponds to transition duration
+        }, 800); // Corresponds to transition duration
     };
 
     // Use video 'ended' event

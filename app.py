@@ -1,7 +1,7 @@
 # filepath: /home/chris/github/CourseSchedule2Calendar/app.py
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from flask import Flask, request, redirect, url_for, render_template, flash, session, Response
+from flask import Flask, request, redirect, url_for, render_template, flash, session, Response, jsonify
 from werkzeug.utils import secure_filename
 import os, secrets
 import logging
@@ -15,7 +15,7 @@ from flask_session import Session
 import redis
 import json
 from flask_mail import Mail, Message
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from icalendar import Calendar as ICalendar
 from icalendar import Event as ICalendarEvent
 from datetime import datetime
@@ -33,6 +33,9 @@ ALLOWED_EXTENSIONS = {'pdf'}
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-key-change-in-production')
+
+# Force HTTPS for URL generation
+app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # --- Redis / session configuration ---
 app.config['SESSION_TYPE'] = 'redis'
@@ -58,13 +61,65 @@ redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 # Global cache for uploaded course data (keyed by upload_id) - still in memory for now
 UPLOAD_CACHE = {}
 
+# Analytics tracking functions
+def track_event(event_type, data=None):
+    """Track analytics events in Redis with timestamps"""
+    timestamp = datetime.now().isoformat()
+    event_data = {
+        'type': event_type,
+        'timestamp': timestamp,
+        'data': data or {}
+    }
+    
+    # Store individual event
+    event_id = f"analytics:event:{secrets.token_urlsafe(8)}"
+    redis_client.setex(event_id, 86400 * 30, json.dumps(event_data))  # 30 days TTL
+    
+    # Update counters
+    today = datetime.now().strftime('%Y-%m-%d')
+    redis_client.hincrby(f"analytics:daily:{today}", event_type, 1)
+    redis_client.hincrby("analytics:total", event_type, 1)
+    
+    # Track unique sessions (if session_id available)
+    if 'session_id' in session:
+        session_key = f"analytics:session:{session['session_id']}"
+        redis_client.sadd(session_key, event_type)
+        redis_client.expire(session_key, 86400 * 7)  # 7 days TTL
+
+def get_analytics_summary():
+    """Get analytics summary for dashboard"""
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Get today's stats
+    today_stats = redis_client.hgetall(f"analytics:daily:{today}")
+    
+    # Get total stats
+    total_stats = redis_client.hgetall("analytics:total")
+    
+    # Get recent activity (last 7 days)
+    recent_activity = []
+    for i in range(7):
+        date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
+        day_stats = redis_client.hgetall(f"analytics:daily:{date}")
+        if day_stats:
+            recent_activity.append({
+                'date': date,
+                'stats': day_stats
+            })
+    
+    return {
+        'today': today_stats,
+        'total': total_stats,
+        'recent': recent_activity
+    }
+
 # Redis-backed cache helpers for OAUTH_FLOW_CACHE and EVENT_SERVICE_CACHE
 def redis_set_json(key, value, ex=None):
     redis_client.set(key, json.dumps(value), ex=ex)
 
 def redis_get_json(key):
     val = redis_client.get(key)
-    if val:
+    if isinstance(val, (str, bytes, bytearray)) and val:
         return json.loads(val)
     return None
 
@@ -119,7 +174,8 @@ APPLE_REDIRECT_URI = os.getenv('APPLE_REDIRECT_URI', 'http://localhost:5000/oaut
 
 @app.route('/')
 def index():
-    return render_template('home.html')
+    """Root route - redirect to home to ensure consistent canonical URLs"""
+    return redirect(url_for('home'), code=301)
 
 @app.route('/start')
 def upload():
@@ -139,6 +195,10 @@ def upload_file():
             logger.info("No file selected. Redirecting to index.")
             return redirect(url_for('index'))
         if file and allowed_file(file.filename):
+            if file.filename is None:
+                flash('No selected file')
+                logger.info("No file selected. Redirecting to index.")
+                return redirect(url_for('index'))
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
@@ -153,6 +213,14 @@ def upload_file():
             UPLOAD_CACHE[upload_id] = courses
             session['upload_id'] = upload_id
             session['pdf_filename'] = filename
+            
+            # Track successful PDF upload
+            track_event('pdf_uploaded', {
+                'filename': filename,
+                'courses_found': len(courses),
+                'upload_id': upload_id
+            })
+            
             logger.info('PDF uploaded and parsed: %s, found %d courses', filename, len(courses))
             return redirect(url_for('show_events'))
         flash('Invalid file type. Please upload a PDF.')
@@ -278,14 +346,16 @@ def oauth2callback():
         if provider == 'google':
             try:
                 from google_auth_oauthlib.flow import Flow
+                redirect_uri = os.getenv('GOOGLE_REDIRECT_URI', 'https://schedshare.chrislawrence.ca/oauth2callback')
+                logger.info(f"[OAuth2Callback] Using redirect_uri for token exchange: {redirect_uri}")
                 flow = Flow.from_client_secrets_file(
                     'credentials.json',
                     scopes=GoogleCalendarProvider.SCOPES,
-                    redirect_uri='http://localhost:5000/oauth2callback'
+                    redirect_uri=redirect_uri
                 )
                 if code_verifier:
                     flow.code_verifier = code_verifier
-                
+                logger.info(f"[OAuth2Callback] Flow redirect_uri: {flow.redirect_uri}")
                 service = provider_instance.handle_callback(auth_response, flow)
                 
                 created_events = []
@@ -301,6 +371,22 @@ def oauth2callback():
                 session['created_events'] = created_events
                 session['pdf_filename'] = filename
                 session['provider'] = 'google'
+                
+                # Track successful Google Calendar event creation
+                track_event('google_events_created', {
+                    'events_created': len(created_events),
+                    'courses_selected': len(selected_courses),
+                    'provider': 'google'
+                })
+                
+                # Track for advanced analytics (if available)
+                try:
+                    from advanced_analytics import analytics
+                    upload_id = session.get('upload_id', 'unknown')
+                    analytics.mark_events_created(upload_id, 'google')
+                except ImportError:
+                    # Advanced analytics not available
+                    pass
                 
                 flash(f"Successfully created {len(created_events)} events.", "success")
                 logger.info(f"Successfully created {len(created_events)} Google Calendar events.")
@@ -353,6 +439,22 @@ def create_selected_events():
     
     provider = request.form.get('provider')
     session['provider'] = provider
+
+    # Track event creation attempt
+    track_event('events_selected', {
+        'provider': provider,
+        'courses_selected': len(selected_courses),
+        'total_courses_available': len(courses)
+    })
+    
+    # Track for advanced analytics (if available)
+    try:
+        from advanced_analytics import analytics
+        upload_id = session.get('upload_id', 'unknown')
+        analytics.track_course_selection(selected_courses, provider, upload_id)
+    except ImportError:
+        # Advanced analytics not available
+        pass
 
     if provider == 'google':
         provider_instance = CALENDAR_PROVIDERS.get(provider)
@@ -415,7 +517,8 @@ def clear_session():
     upload_id = session.pop('upload_id', None)
     session.clear()
     flash('Session cleared!')
-    return redirect(url_for('index'))
+    # Redirect to home instead of index to avoid potential redirect chains
+    return redirect(url_for('home'))
 
 # Route: Send email summary
 @app.route('/send-email-summary', methods=['POST'])
@@ -436,6 +539,13 @@ def send_email_summary():
         mail.send(msg)
         flash('Email summary sent successfully!')
         session['email_sent'] = True
+        
+        # Track successful email summary
+        track_event('email_summary_sent', {
+            'events_count': len(created_events),
+            'email_domain': email.split('@')[-1] if '@' in email else 'unknown'
+        })
+        
     except Exception as e:
         logger.exception("Email sending failed")
         flash(f"Failed to send email: {e}")
@@ -451,6 +561,21 @@ def download_ics():
         flash('No selected courses to export. Your session might have expired.')
         return redirect(url_for('index'))
 
+    # Track ICS download
+    track_event('ics_downloaded', {
+        'courses_count': len(courses_to_export),
+        'provider': 'apple/outlook'
+    })
+    
+    # Track for advanced analytics (if available)
+    try:
+        from advanced_analytics import analytics
+        upload_id = session.get('upload_id', 'unknown')
+        analytics.mark_events_created(upload_id, 'apple')
+    except ImportError:
+        # Advanced analytics not available
+        pass
+
     cal = ICalendar()
     cal.add('prodid', '-//SchedShare//EN')
     cal.add('version', '2.0')
@@ -459,7 +584,15 @@ def download_ics():
         try:
             e = ICalendarEvent()
             e.add('summary', f"{c.get('Course', 'N/A')} ({c.get('Section', 'N/A')})")
-            e.add('location', c.get('Location', 'N/A'))
+            # Set location to full campus address
+            loc = c.get('Location', 'N/A')
+            if 'Nanaimo' in loc:
+                location = "Vancouver Island University, 900 Fifth St, Nanaimo, BC V9R 5S5, Canada"
+            elif 'Cowichan' in loc:
+                location = "Vancouver Island University, Cowichan Campus, 2011 University Way, North Cowichan, BC V9L 0C7, Canada"
+            else:
+                location = loc
+            e.add('location', location)
             e.add('description', f"Instructor: {c.get('Instructor', 'N/A')}, Status: {c.get('Status', 'N/A')}, Mode: {c.get('DeliveryMode', 'N/A')}")
             
             start_dt = _ics_start_datetime(c)
@@ -513,9 +646,248 @@ def _ics_until_date(date_str, semester):
 def privacy():
     return render_template('privacy.html')
 
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
 @app.route('/home')
 def home():
     return render_template('home.html')
+
+@app.route('/watch')
+def watch():
+    # Get analytics data for dynamic content
+    try:
+        # Use the same method as the analytics route
+        analytics_data = get_analytics_summary()
+        total_uploads = int(analytics_data['total'].get('pdf_uploaded', 0))
+        print(f"Total uploads: {total_uploads}")
+        
+        # Format the number nicely
+        if total_uploads >= 1000:
+            uploads_text = f"{total_uploads:,}"
+        elif total_uploads >= 100:
+            uploads_text = f"{total_uploads}"
+        else:
+            uploads_text = "dozens of"
+    except (ImportError, AttributeError, KeyError) as e:
+        # Fallback if analytics not available
+        print("Analytics not available")
+        print(f"Error: {e}")
+        print(f"Type: {type(e)}")
+        total_uploads = 0
+        uploads_text = "hundreds of"
+    
+    return render_template('watch.html', total_uploads=total_uploads, uploads_text=uploads_text)
+
+# --- SEO: sitemap.xml and robots.txt ---
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    """Generate a comprehensive sitemap for public pages."""
+    try:
+        # Define pages with their priorities and change frequencies
+        pages = [
+            {
+                'url': url_for('home', _external=True),
+                'priority': '1.0',
+                'changefreq': 'weekly',
+                'description': 'Home page'
+            },
+            {
+                'url': url_for('upload', _external=True),
+                'priority': '0.9',
+                'changefreq': 'monthly',
+                'description': 'Start page for uploading schedules'
+            },
+            {
+                'url': url_for('watch', _external=True),
+                'priority': '0.8',
+                'changefreq': 'monthly',
+                'description': 'How it works demo page'
+            },
+            {
+                'url': url_for('privacy', _external=True),
+                'priority': '0.3',
+                'changefreq': 'yearly',
+                'description': 'Privacy policy'
+            },
+            {
+                'url': url_for('terms', _external=True),
+                'priority': '0.3',
+                'changefreq': 'yearly',
+                'description': 'Terms of service'
+            },
+        ]
+
+        now = datetime.utcnow().strftime('%Y-%m-%d')
+        lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        ]
+        
+        for page in pages:
+            lines.append(
+                f"  <url>\n"
+                f"    <loc>{page['url']}</loc>\n"
+                f"    <lastmod>{now}</lastmod>\n"
+                f"    <changefreq>{page['changefreq']}</changefreq>\n"
+                f"    <priority>{page['priority']}</priority>\n"
+                f"  </url>"
+            )
+        
+        lines.append('</urlset>')
+        return Response("\n".join(lines), mimetype='application/xml')
+    except Exception as e:
+        logger.exception("Failed generating sitemap.xml: %s", e)
+        # Fallback empty sitemap so crawlers get a valid response
+        return Response("""<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>""",
+                        mimetype='application/xml')
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Expose robots.txt that points to the sitemap and hides non-indexable routes."""
+    rules = [
+        'User-agent: *',
+        # Allow crawling of public pages
+        'Allow: /',
+        'Allow: /home',
+        'Allow: /start',
+        'Allow: /watch',
+        'Allow: /privacy',
+        'Allow: /terms',
+        'Allow: /static/',
+        # Disallow operational or private routes
+        'Disallow: /upload',
+        'Disallow: /events',
+        'Disallow: /create-events',
+        'Disallow: /oauth2callback',
+        'Disallow: /analytics',
+        'Disallow: /advanced-analytics',
+        'Disallow: /clear-session',
+        'Disallow: /send-email-summary',
+        'Disallow: /download-ics',
+        'Disallow: /authorize/',
+        'Disallow: /confirm',
+        'Disallow: /select-provider',
+        'Disallow: /uploads/',
+        # Crawl delay for rate limiting
+        'Crawl-delay: 1',
+        # Point to sitemap
+        f"Sitemap: {url_for('sitemap_xml', _external=True)}",
+    ]
+    return Response("\n".join(rules) + "\n", mimetype='text/plain')
+
+@app.route('/analytics')
+def analytics_dashboard():
+    """Analytics dashboard for tracking usage metrics"""
+    # Basic authentication check
+    auth_token = request.args.get('token')
+    expected_token = os.getenv('ANALYTICS_TOKEN', 'schedshare-analytics-2025')
+    
+    if auth_token != expected_token:
+        return render_template('analytics_login.html')
+    
+    try:
+        analytics = get_analytics_summary()
+        
+        # Calculate some derived metrics
+        total_uploads = int(analytics['total'].get('pdf_uploaded', 0))
+        total_events_selected = int(analytics['total'].get('events_selected', 0))
+        total_google_events = int(analytics['total'].get('google_events_created', 0))
+        total_ics_downloads = int(analytics['total'].get('ics_downloaded', 0))
+        total_emails = int(analytics['total'].get('email_summary_sent', 0))
+        
+        # Calculate conversion rates
+        conversion_rate = (total_events_selected / total_uploads * 100) if total_uploads > 0 else 0
+        google_usage_rate = (total_google_events / total_events_selected * 100) if total_events_selected > 0 else 0
+        ics_usage_rate = (total_ics_downloads / total_events_selected * 100) if total_events_selected > 0 else 0
+        
+        # Get today's stats
+        today_uploads = int(analytics['today'].get('pdf_uploaded', 0))
+        today_events = int(analytics['today'].get('events_selected', 0))
+        today_google = int(analytics['today'].get('google_events_created', 0))
+        today_ics = int(analytics['today'].get('ics_downloaded', 0))
+        today_emails = int(analytics['today'].get('email_summary_sent', 0))
+        
+        return render_template('analytics.html', 
+                             analytics=analytics,
+                             total_uploads=total_uploads,
+                             total_events_selected=total_events_selected,
+                             total_google_events=total_google_events,
+                             total_ics_downloads=total_ics_downloads,
+                             total_emails=total_emails,
+                             conversion_rate=conversion_rate,
+                             google_usage_rate=google_usage_rate,
+                             ics_usage_rate=ics_usage_rate,
+                             today_uploads=today_uploads,
+                             today_events=today_events,
+                             today_google=today_google,
+                             today_ics=today_ics,
+                             today_emails=today_emails)
+    except Exception as e:
+        logger.exception("Error loading analytics dashboard")
+        flash(f"Error loading analytics: {str(e)}")
+        return redirect(url_for('index'))
+
+@app.route('/advanced-analytics')
+def advanced_analytics_dashboard():
+    """Advanced analytics dashboard with department/time analysis"""
+    # Basic authentication check
+    auth_token = request.args.get('token')
+    expected_token = os.getenv('ANALYTICS_TOKEN', 'schedshare-analytics-2025')
+    
+    if auth_token != expected_token:
+        return render_template('analytics_login.html')
+    
+    try:
+        from advanced_analytics import analytics
+        
+        # Get analytics data
+        departments = analytics.get_department_analytics()
+        time_slots = analytics.get_time_analytics()
+        days = analytics.get_day_analytics()
+        summary = analytics.get_summary_stats()
+        
+        # Calculate max for time bar scaling
+        max_time_courses = max([slot['total_courses'] for slot in time_slots]) if time_slots else 0
+        
+        return render_template('advanced_analytics.html',
+                             departments=departments,
+                             time_slots=time_slots,
+                             days=days,
+                             summary=summary,
+                             max_time_courses=max_time_courses)
+    except Exception as e:
+        logger.exception("Error loading advanced analytics dashboard")
+        flash(f"Error loading advanced analytics: {str(e)}")
+        return redirect(url_for('index'))
+
+@app.route('/portfolio-stats')
+def portfolio_stats():
+    """Public portfolio statistics endpoint"""
+    try:
+        from portfolio_analytics import portfolio_analytics
+        
+        # Get portfolio data
+        portfolio_data = portfolio_analytics.generate_portfolio_stats()
+        
+        # Return JSON for easy integration
+        return jsonify(portfolio_data)
+    except ImportError:
+        return jsonify({'error': 'Portfolio analytics not available'}), 500
+
+@app.route('/portfolio-report')
+def portfolio_report():
+    """Generate markdown portfolio report"""
+    try:
+        from portfolio_analytics import portfolio_analytics
+        
+        # Generate markdown report
+        report = portfolio_analytics.export_portfolio_data('markdown')
+        
+        return Response(report, mimetype='text/markdown')
+    except ImportError:
+        return "Portfolio analytics not available", 500
 
 if __name__ == '__main__':
     # This block is for local development.

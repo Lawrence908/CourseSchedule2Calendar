@@ -1,166 +1,159 @@
 # SchedShare - Course Schedule to Calendar Converter
 
-A Python Flask application that extracts course schedules from VIU course schedule PDFs and creates calendar events in your Google or Apple calendar. You can choose to allow permissions for automatic entry or select the calendar files (.ics) to schedule if you prefer to enter it yourself.
+**Live Application**: [schedshare.chrislawrence.ca](https://schedshare.chrislawrence.ca)
 
-## ✨ Features
+A full-stack web application that automates the conversion of university course schedules from PDF format into digital calendar events. SchedShare integrates with multiple calendar providers and provides both automated event creation and manual ICS file export options.
 
-- **PDF Parsing**: Automatically extracts course information from VIU course schedule PDFs
-- **Multi-Platform Support**: Integrates with Google Calendar and Apple Calendar
-- **Flexible Export**: Download ICS files for manual import or direct calendar integration
-- **Email Summaries**: Receive email confirmations of created events
-- **Modern UI**: Clean, responsive web interface
-- **Docker Support**: Easy deployment with Docker and Docker Compose
-- **File Watching**: Automatic server restart on code changes during development
+## 🎯 Problem Solved
 
-## 🚀 Quick Start
+University students and faculty often spend hours manually entering course schedules into their digital calendars. SchedShare eliminates this tedious process by:
 
-### Prerequisites
-- Docker and Docker Compose
-- Git
+- **Automatically extracting** course information from VIU course schedule PDFs
+- **Seamlessly integrating** with existing calendar workflows (Google Calendar, Apple Calendar)
+- **Providing flexibility** through both automated and manual scheduling options
+- **Supporting multiple platforms** and export formats
 
-### Local Development
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/CourseSchedule2Calendar.git
-   cd CourseSchedule2Calendar
-   ```
+## ✨ Core Features
 
-2. **Set up environment:**
-   ```bash
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
+### 📄 Intelligent PDF Processing
+- **Advanced Text Extraction**: Uses pdfplumber for robust PDF parsing
+- **Pattern Recognition**: Automatically identifies course codes, times, locations, and instructors
+- **Error Recovery**: Handles malformed or corrupted PDF files gracefully
+- **Format Flexibility**: Supports various PDF layouts and structures
 
-3. **Start development server:**
-   ```bash
-   ./dev.sh
-   ```
+### 📅 Multi-Platform Calendar Integration
+- **Google Calendar**: Direct OAuth2 integration with automatic event creation
+- **Apple Calendar**: ICS file generation for manual import
+- **Recurring Events**: Generates proper RRULE standards for weekly schedules
+- **Extensible Architecture**: Easy to add support for additional calendar providers
 
-4. **Access the application:**
-   - Open http://localhost:5000
-   - Upload a course schedule PDF
-   - Choose your calendar provider
-   - Create calendar events
+### 🔐 Secure Authentication
+- **OAuth2 Implementation**: Secure Google OAuth2 flow with state validation
+- **Session Management**: Redis-backed session storage
+- **JWT Tokens**: Secure API authentication
+- **Rate Limiting**: Protection against abuse
 
-## 🐳 Docker Deployment
+### 📧 Automated Notifications
+- **Email Confirmations**: Receive detailed summaries of created events
+- **HTML Templates**: Professional email formatting
+- **Error Notifications**: Alerts for failed operations
 
-### Development Mode (with file watching)
-```bash
-./dev.sh
+### 🎨 Modern User Experience
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Intuitive Interface**: Clean, user-friendly web interface
+- **Real-time Feedback**: Immediate processing status updates
+- **Progressive Enhancement**: Graceful degradation for older browsers
+
+## 🏗️ Technical Architecture
+
+### System Design
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Web Frontend  │    │  Flask Backend  │    │ Calendar APIs   │
+│   (HTML/CSS/JS) │◄──►│   (Python)      │◄──►│ Google/Apple    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   Redis Cache   │
+                       │  (Sessions)     │
+                       └─────────────────┘
 ```
 
-### Production Mode
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
+### Technology Stack
 
-## ☁️ Cloud Deployment
+#### **Backend Technologies**
+- **Python 3.11** - Primary programming language
+- **Flask** - Lightweight web framework for rapid development
+- **Gunicorn** - Production WSGI HTTP server
+- **Redis** - Session storage and caching layer
+- **Jinja2** - Template engine for dynamic content generation
 
-### Google Cloud Run (Recommended)
-- **Automatic CI/CD**: Push to `main` branch triggers deployment
-- **Auto-scaling**: Handles traffic spikes automatically
-- **Managed**: No server maintenance required
+#### **Frontend Technologies**
+- **HTML5/CSS3** - Semantic markup and responsive design
+- **JavaScript (ES6+)** - Client-side interactivity
+- **Bootstrap** - Responsive UI framework
 
-### Google Cloud VM
-- **Full control**: Complete server access
-- **Cost-effective**: Pay only for compute resources
-- **Custom configuration**: Full customization options
+#### **External APIs & Services**
+- **Google Calendar API** - OAuth2 integration for automated event creation
+- **Google OAuth2** - Secure authentication flow
+- **Apple Sign In** - OAuth integration for Apple Calendar
+- **Gmail SMTP** - Email service for confirmation notifications
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+#### **DevOps & Infrastructure**
+- **Docker & Docker Compose** - Containerization and service orchestration
+- **Nginx** - Reverse proxy, load balancing, and SSL termination
+- **GitHub Actions** - CI/CD pipeline automation
+- **Google Cloud Platform** - Cloud hosting infrastructure
 
-## 🔧 Configuration
+## 🚀 Key Technical Features
 
-### Environment Variables
-Required environment variables (see `env.example`):
+### 1. **Advanced PDF Parsing Engine**
+- Intelligent text extraction using pdfplumber
+- Pattern recognition for course schedule formats
+- Support for various academic calendar structures
+- Robust error handling and recovery
 
-- **Flask**: `FLASK_SECRET_KEY`, `FLASK_ENV`
-- **Redis**: `REDIS_URL`
-- **Email**: `MAIL_USERNAME`, `MAIL_PASSWORD`
-- **Google OAuth**: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
-- **Apple OAuth**: `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`
+### 2. **OAuth2 Authentication System**
+- Complete OAuth2 authorization code flow
+- Secure token storage and refresh mechanisms
+- State parameter validation for CSRF protection
+- Scope management for calendar permissions
 
-### Calendar Providers
-- **Google Calendar**: OAuth2 integration with automatic event creation
-- **Apple Calendar**: ICS file download for manual import
+### 3. **Recurring Event Generation**
+- RRULE (Recurrence Rule) implementation
+- Weekly schedule pattern recognition
+- Academic calendar integration
+- Exception handling for holidays and breaks
 
-## 📁 Project Structure
+### 4. **Production-Ready Architecture**
+- Containerized deployment with Docker
+- Auto-scaling cloud infrastructure
+- SSL/TLS encryption
+- Comprehensive monitoring and logging
 
-```
-CourseSchedule2Calendar/
-├── app.py                 # Main Flask application
-├── pdf_parser.py          # PDF text extraction and parsing
-├── calendar_providers/    # Calendar integration modules
-├── templates/            # HTML templates
-├── static/              # CSS, JS, images
-├── uploads/             # Temporary PDF storage
-├── Dockerfile           # Docker configuration
-├── docker-compose.yml   # Development environment
-├── docker-compose.prod.yml  # Production environment
-├── deploy.sh           # VM deployment script
-├── dev.sh              # Development startup script
-└── DEPLOYMENT.md       # Detailed deployment guide
-```
+## 🎓 Academic Project Value
 
-## 🛠️ Development
+This project demonstrates comprehensive full-stack development skills and modern software engineering practices:
 
-### Running Tests
-```bash
-python -m pytest
-```
+### **Computer Science Learning Outcomes**
+- **Software Engineering**: Full-stack web application development
+- **System Architecture**: Microservices with Docker and cloud deployment
+- **Data Processing**: PDF text extraction and pattern recognition
+- **Web Technologies**: Modern web framework development with OAuth2
+- **DevOps**: CI/CD pipelines and production environment management
 
-### Code Style
-```bash
-# Install pre-commit hooks
-pre-commit install
-```
+### **Technical Skills Demonstrated**
+- **Programming**: Python, JavaScript, HTML/CSS, YAML
+- **Frameworks**: Flask, Gunicorn, Redis, Nginx
+- **Cloud & DevOps**: Docker, Google Cloud Platform, GitHub Actions
+- **APIs & Integration**: Google Calendar API, OAuth2, SMTP
 
-### Database
-The application uses Redis for session storage and caching. Redis is included in the Docker setup.
+## 🔮 Future Enhancements
 
-## 📊 Monitoring
+### **Planned Features**
+- Support for additional calendar providers (Outlook, etc.)
+- Batch processing for multiple PDFs
+- Advanced scheduling options and conflict detection
+- Mobile application development
+- API endpoints for third-party integration
 
-### Logs
-```bash
-# Development
-docker-compose logs -f
-
-# Production
-docker-compose -f docker-compose.prod.yml logs -f
-```
-
-### Health Checks
-- Application: http://localhost:5000/
-- Docker health checks configured in Dockerfile
-
-## 🔒 Security
-
-- **HTTPS**: SSL/TLS encryption in production
-- **Rate Limiting**: API rate limiting via Nginx
-- **Security Headers**: XSS protection, content type validation
-- **Non-root User**: Docker containers run as non-root user
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### **Research Opportunities**
+- **Machine Learning**: OCR improvement and natural language processing
+- **Scheduling Algorithms**: Course scheduling optimization
+- **Cloud Computing**: Scalable web application architecture
+- **Security**: Advanced OAuth2 implementation and API security
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🤝 Contributing
 
-- **Issues**: Create an issue on GitHub
-- **Documentation**: See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment help
-- **Logs**: Check application logs for debugging
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 🚀 Roadmap
+## 📞 Support
 
-- [ ] Support for more calendar providers (Outlook, etc.)
-- [ ] Batch processing for multiple PDFs
-- [ ] Advanced scheduling options
-- [ ] Mobile app
-- [ ] API endpoints for third-party integration
+- **Live Application**: [schedshare.chrislawrence.ca](https://schedshare.chrislawrence.ca)
+- **Issues**: Create an issue on GitHub for bug reports or feature requests
+- **Documentation**: See [TECHNICAL_SPECIFICATION.md](TECHNICAL_SPECIFICATION.md) for detailed technical information
