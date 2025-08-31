@@ -330,7 +330,16 @@ def oauth2callback():
             flash('OAuth flow expired or invalid. Please try again.')
             return redirect(url_for('index'))
         
+        logger.info(f"Retrieved cache entry keys: {list(cache_entry.keys()) if cache_entry else 'None'}")
+        
+        # Handle both direct OAuth flow (courses) and course selection flow (selected_courses)
         selected_courses = cache_entry.get('selected_courses', [])
+        if not selected_courses:
+            # Fallback to direct OAuth flow where all courses are selected
+            selected_courses = cache_entry.get('courses', [])
+            logger.info(f"Using fallback courses from direct OAuth flow: {len(selected_courses)} courses")
+        else:
+            logger.info(f"Using selected courses from course selection flow: {len(selected_courses)} courses")
         filename = cache_entry.get('filename')
         code_verifier = cache_entry.get('code_verifier')
         

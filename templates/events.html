@@ -533,6 +533,10 @@
         </div>
         
         <div id="eventsSection" {% if created_events %}class="d-none"{% endif %}>
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>All events are selected by default!</strong> Click on any event card to deselect it if you don't want to add it to your calendar.
+            </div>
             {% if filename %}
             <div class="file-info-container">
                 <img src="/static/pdf-icon.png" alt="PDF" style="height: 1.5rem; width: 1.5rem;">
@@ -566,32 +570,32 @@
                     </div>
                     {% endfor %}
                 </div>
+            </div>
+        </div>
 
-                <!-- Direct Action Buttons -->
-                <div class="mb-4">
-                    <h3 class="h5 fw-bold text-light mb-3" id="calendarSectionTitle">Add to Your Calendar</h3>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <a href="{{ url_for('authorize', provider='google') }}" class="google-signin-btn" id="googleAuthBtn">
-                                <img src="/static/google-logo.png" alt="Google">
-                                <span>Continue with Google Calendar</span>
-                            </a>
+        <!-- Direct Action Buttons - Moved outside eventsSection so they remain visible when events are hidden -->
+        <div class="mb-4">
+            <h3 class="h5 fw-bold text-light mb-3" id="calendarSectionTitle">Add to Your Calendar</h3>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <a href="{{ url_for('authorize', provider='google') }}" class="google-signin-btn" id="googleAuthBtn">
+                        <img src="/static/google-logo.png" alt="Google">
+                        <span>Continue with Google Calendar</span>
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" class="ics-download-btn" id="icsDownloadBtn" disabled>
+                        <div class="calendar-logos me-2">
+                            <img src="/static/apple-logo.png" alt="Apple" class="calendar-logo">
+                            <img src="/static/outlook-calendar.png" alt="Outlook Calendar" class="calendar-logo">
                         </div>
-                        <div class="col-md-6">
-                            <button type="button" class="ics-download-btn" id="icsDownloadBtn" disabled>
-                                <div class="calendar-logos me-2">
-                                    <img src="/static/apple-logo.png" alt="Apple" class="calendar-logo">
-                                    <img src="/static/outlook-calendar.png" alt="Outlook Calendar" class="calendar-logo">
-                                </div>
-                                <span>Download ICS File</span>
-                            </button>
-                        </div>
-                    </div>
-                    <p class="text-muted small text-center mt-3 mb-0">
-                        Select events above to enable download options
-                    </p>
+                        <span>Download ICS File</span>
+                    </button>
                 </div>
             </div>
+            <p class="text-muted small text-center mt-3 mb-0">
+                All events are selected by default. Click on event cards to deselect any you don't want.
+            </p>
         </div>
         
         {% if created_events %}
@@ -690,19 +694,53 @@
             }
         }
 
+        // Initialize with all courses selected by default
+        console.log('🎓 SchedShare: Found', cards.length, 'courses from your PDF schedule');
+        
+
+        
+        // Log course details for debugging
+        const courseDetails = [];
+        cards.forEach((card, idx) => {
+            const index = card.parentElement.getAttribute('data-index');
+            const courseTitle = card.querySelector('.course-title')?.textContent || 'Unknown Course';
+            const instructor = card.querySelector('.course-details p:nth-child(2) span')?.textContent || 'Unknown Instructor';
+            const time = card.querySelector('.course-details p:nth-child(5) span')?.textContent || 'Unknown Time';
+            
+            courseDetails.push(`${courseTitle} (${instructor}) - ${time}`);
+            
+            console.log(`📅 Auto-selecting: ${courseTitle} - ${instructor} at ${time}`);
+            
+            selectedSet.add(index);
+            card.classList.add('selected');
+            const checkmark = card.querySelector('.selection-indicator');
+            if (checkmark) {
+                checkmark.classList.remove('opacity-0');
+            }
+        });
+        
+        console.log('✅ All courses auto-selected! You can click any card to deselect if needed.');
+        console.log('📋 Course Summary:', courseDetails);
+
+        // Update button states after initializing all selections
+        updateButtonStates();
+
         cards.forEach((card, idx) => {
             card.addEventListener('click', () => {
                 const index = card.parentElement.getAttribute('data-index');
                 const checkmark = card.querySelector('.selection-indicator');
+                const courseTitle = card.querySelector('.course-title')?.textContent || 'Unknown Course';
                 
                 if (selectedSet.has(index)) {
                     selectedSet.delete(index);
                     card.classList.remove('selected');
                     checkmark.classList.add('opacity-0');
+                    console.log(`❌ Deselected: ${courseTitle}`);
                 } else {
                     selectedSet.add(index);
                     card.classList.add('selected');
                     checkmark.classList.remove('opacity-0');
+                    console.log(`✅ Selected: ${courseTitle}`);
                 }
                 updateButtonStates();
             });
