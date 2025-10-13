@@ -1,0 +1,58 @@
+# SchedShare (CourseSchedule2Calendar) - Homelab Integration  
+# Port 8130 - chrislawrence.ca/schedshare
+
+services:
+  schedshare:
+    build: .
+    container_name: schedshare
+    restart: unless-stopped
+    networks:
+      - web
+      - schedshare-internal
+    ports:
+      - "8130:5000"
+    environment:
+      - FLASK_ENV=production
+      - REDIS_URL=redis://schedshare-redis:6379/0
+      - PORT=5000
+    env_file:
+      - .env
+    depends_on:
+      schedshare-redis:
+        condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  schedshare-redis:
+    image: redis:7-alpine
+    container_name: schedshare-redis
+    restart: unless-stopped
+    networks:
+      - schedshare-internal
+    volumes:
+      - schedshare_redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  web:
+    external: true
+  schedshare-internal:
+    driver: bridge
+
+volumes:
+  schedshare_redis_data:
