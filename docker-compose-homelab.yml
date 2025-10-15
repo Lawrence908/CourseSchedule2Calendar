@@ -7,7 +7,7 @@ services:
     container_name: schedshare
     restart: unless-stopped
     networks:
-      - web
+      - homelab-web
       - schedshare-internal
     ports:
       - "8130:5000"
@@ -49,8 +49,9 @@ services:
       retries: 3
 
 networks:
-  web:
+  homelab-web:
     external: true
+    name: homelab-web
   schedshare-internal:
     driver: bridge
 
