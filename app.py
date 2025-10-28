@@ -1,4 +1,4 @@
-# filepath: /home/chris/github/CourseSchedule2Calendar/app.py
+# filepath: /home/chris/github/schedshare/app.py
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from flask import Flask, request, redirect, url_for, render_template, flash, session, Response, jsonify

@@ -116,8 +116,8 @@ docker-compose up --build
 
 3. **Clone and deploy:**
    ```bash
-   git clone https://github.com/yourusername/CourseSchedule2Calendar.git
-   cd CourseSchedule2Calendar
+   git clone https://github.com/lawrence908/schedshare.git
+   cd schedshare
    ./deploy.sh
    ```
 
